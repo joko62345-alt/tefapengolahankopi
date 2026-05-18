@@ -2,68 +2,140 @@
 require_once '../config/config.php';
 checkRole('admin');
 
-// ✅ Status lunas: 'lunas' DAN 'dikonfirmasi' (agar sinkron dengan transactions.php)
-$status_lunas_clause = "IN ('lunas', 'dikonfirmasi')";
+class DashboardController {
+    private $conn;
+    private $statusLunasClause = "IN ('lunas', 'dikonfirmasi')";
+    
+    // Properties untuk data view
+    public $totalProduk = 0;
+    public $totalTransaksi = 0;
+    public $totalPendapatan = 0;
+    public $stokRendah = 0;
+    public $transaksiPending = 0;
+    public $belumDiambil = 0;
+    public $recentTransactions = [];
+    public $lowStockProducts = [];
 
-// Total Produk
-$total_produk = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM products"))['total'] ?? 0;
+    public function __construct($connection) {
+        $this->conn = $connection;
+        $this->loadData();
+    }
 
-// Total Transaksi (semua status)
-$total_transaksi = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM transactions"))['total'] ?? 0;
+    // Load semua data dashboard dalam satu metode
+     
+    private function loadData(): void {
+        $this->totalProduk = $this->getTotalProduk();
+        $this->totalTransaksi = $this->getTotalTransaksi();
+        $this->totalPendapatan = $this->getTotalPendapatan();
+        $this->stokRendah = $this->getStokRendah();
+        $this->transaksiPending = $this->getTransaksiPending();
+        $this->belumDiambil = $this->getBelumDiambil();
+        $this->recentTransactions = $this->getRecentTransactions(5);
+        $this->lowStockProducts = $this->getLowStockProducts(20, 5);
+    }
 
-// ✅ Total Pendapatan: Hanya transaksi lunas/dikonfirmasi
-$total_pendapatan = mysqli_fetch_assoc(mysqli_query($conn, "
-    SELECT SUM(total_harga) as total 
-    FROM transactions 
-    WHERE status_pembayaran $status_lunas_clause
-"))['total'] ?? 0;
+    private function getTotalProduk(): int {
+        $result = mysqli_query($this->conn, "SELECT COUNT(*) as total FROM products");
+        return (int) (mysqli_fetch_assoc($result)['total'] ?? 0);
+    }
 
-// Stok Rendah (< 20)
-$stok_rendah = mysqli_fetch_assoc(mysqli_query($conn, "
-    SELECT COUNT(*) as total 
-    FROM products 
-    WHERE stok < 20
-"))['total'] ?? 0;
+    private function getTotalTransaksi(): int {
+        $result = mysqli_query($this->conn, "SELECT COUNT(*) as total FROM transactions");
+        return (int) (mysqli_fetch_assoc($result)['total'] ?? 0);
+    }
 
-// Transaksi Pending (belum lunas)
-$transaksi_pending = mysqli_fetch_assoc(mysqli_query($conn, "
-    SELECT COUNT(*) as total 
-    FROM transactions 
-    WHERE status_pembayaran = 'pending'
-"))['total'] ?? 0;
+    private function getTotalPendapatan(): float {
+        $clause = $this->statusLunasClause;
+        $result = mysqli_query($this->conn, "
+            SELECT SUM(total_harga) as total 
+            FROM transactions 
+            WHERE status_pembayaran $clause
+        ");
+        return (float) (mysqli_fetch_assoc($result)['total'] ?? 0);
+    }
 
-// Transaksi Belum Diambil (sudah lunas tapi belum diambil)
-$belum_diambil = mysqli_fetch_assoc(mysqli_query($conn, "
-    SELECT COUNT(*) as total 
-    FROM transactions 
-    WHERE status_pengambilan = 'belum_diambil' 
-    AND status_pembayaran $status_lunas_clause
-"))['total'] ?? 0;
+    private function getStokRendah(int $threshold = 20): int {
+        $result = mysqli_query($this->conn, "
+            SELECT COUNT(*) as total 
+            FROM products 
+            WHERE stok < $threshold
+        ");
+        return (int) (mysqli_fetch_assoc($result)['total'] ?? 0);
+    }
 
-// TRANSAKSI TERBARU (5 DATA)
-$recent_transactions = [];
-$query = mysqli_query($conn, "
-    SELECT t.*, u.nama_lengkap, u.telepon 
-    FROM transactions t 
-    JOIN users u ON t.user_id = u.id 
-    ORDER BY t.tanggal_transaksi DESC 
-    LIMIT 5
-");
-while ($row = mysqli_fetch_assoc($query)) {
-    $recent_transactions[] = $row;
+    private function getTransaksiPending(): int {
+        $result = mysqli_query($this->conn, "
+            SELECT COUNT(*) as total 
+            FROM transactions 
+            WHERE status_pembayaran = 'pending'
+        ");
+        return (int) (mysqli_fetch_assoc($result)['total'] ?? 0);
+    }
+
+    private function getBelumDiambil(): int {
+        $clause = $this->statusLunasClause;
+        $result = mysqli_query($this->conn, "
+            SELECT COUNT(*) as total 
+            FROM transactions 
+            WHERE status_pengambilan = 'belum_diambil' 
+            AND status_pembayaran $clause
+        ");
+        return (int) (mysqli_fetch_assoc($result)['total'] ?? 0);
+    }
+
+    private function getRecentTransactions(int $limit = 5): array {
+        $data = [];
+        $query = mysqli_query($this->conn, "
+            SELECT t.*, u.nama_lengkap, u.telepon 
+            FROM transactions t 
+            JOIN users u ON t.user_id = u.id 
+            ORDER BY t.tanggal_transaksi DESC 
+            LIMIT $limit
+        ");
+        while ($row = mysqli_fetch_assoc($query)) {
+            $data[] = $row;
+        }
+        return $data;
+    }
+
+    private function getLowStockProducts(int $threshold = 20, int $limit = 5): array {
+        $data = [];
+        $query = mysqli_query($this->conn, "
+            SELECT * FROM products 
+            WHERE stok < $threshold 
+            ORDER BY stok ASC 
+            LIMIT $limit
+        ");
+        while ($row = mysqli_fetch_assoc($query)) {
+            $data[] = $row;
+        }
+        return $data;
+    }
+
+    //Helper: Format status pembayaran untuk badge
+     
+    public function getStatusBadge(string $status): string {
+        if (in_array($status, ['lunas', 'dikonfirmasi'])) {
+            return '<span class="badge-custom badge-success"><i class="fas fa-check"></i> Lunas</span>';
+        }
+        return '<span class="badge-custom badge-warning"><i class="fas fa-hourglass"></i> Pending</span>';
+    }
+
+    //Format tanggal
+     
+    public function formatDate(string $datetime): string {
+    return date('d/m/Y H:i', strtotime($datetime));
 }
 
-//  PRODUK STOK MENIPIS (5 DATA)
-$low_stock_products = [];
-$query = mysqli_query($conn, "
-    SELECT * FROM products 
-    WHERE stok < 20 
-    ORDER BY stok ASC 
-    LIMIT 5
-");
-while ($row = mysqli_fetch_assoc($query)) {
-    $low_stock_products[] = $row;
+    // Format Rupiah
+     
+    public function formatRupiah(float $amount): string {
+        return 'Rp ' . number_format($amount, 0, ',', '.');
+    }
 }
+
+//  Inisialisasi Controller
+$dashboard = new DashboardController($conn);
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -90,16 +162,15 @@ while ($row = mysqli_fetch_assoc($query)) {
                         onerror="this.src='https://via.placeholder.com/42x42/A67C52/FFFFFF?text=T'">
                     <span class="brand-text">TEFA COFFEE</span>
                 </div>
-                <!-- 🆕 Hamburger Menu - RIGHT SIDE -->
+                <!-- Hamburger Menu - RIGHT SIDE -->
                 <button class="hamburger-btn" id="hamburgerBtn" aria-label="Toggle Menu">
                     <i class="fas fa-bars"></i>
                 </button>
             </div>
         </div>
     </div>
-    <!-- Sidebar Overlay -->
-    <div class="sidebar-overlay" id="sidebarOverlay"></div>
     <!-- Sidebar -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
     <div class="sidebar" id="sidebar">
         <ul class="sidebar-menu">
             <li>
@@ -144,7 +215,6 @@ while ($row = mysqli_fetch_assoc($query)) {
     <!-- Main Content Wrapper -->
     <div class="main-wrapper">
         <div class="main-content">
-            <!-- Page Header -->
             <div class="page-header">
                 <h1 class="page-title">
                     Panel Dashboard Admin
@@ -156,7 +226,7 @@ while ($row = mysqli_fetch_assoc($query)) {
                 <div class="stat-card" onclick="window.location.href='products.php'">
                     <div class="stat-icon"><i class="fas fa-box"></i></div>
                     <div class="stat-content">
-                        <div class="stat-number"><?= (int) $total_produk ?></div>
+                        <div class="stat-number"><?= (int) $dashboard->totalProduk ?></div>
                         <div class="stat-label">Total Produk</div>
                     </div>
                 </div>
@@ -164,7 +234,7 @@ while ($row = mysqli_fetch_assoc($query)) {
                 <div class="stat-card" onclick="window.location.href='transactions.php'">
                     <div class="stat-icon"><i class="fas fa-shopping-cart"></i></div>
                     <div class="stat-content">
-                        <div class="stat-number"><?= (int) $total_transaksi ?></div>
+                        <div class="stat-number"><?= (int) $dashboard->totalTransaksi ?></div>
                         <div class="stat-label">Total Transaksi</div>
                     </div>
                 </div>
@@ -172,7 +242,7 @@ while ($row = mysqli_fetch_assoc($query)) {
                 <div class="stat-card" onclick="window.location.href='transactions.php'">
                     <div class="stat-icon"><i class="fas fa-dollar-sign"></i></div>
                     <div class="stat-content">
-                        <div class="stat-number text-rupiah">Rp <?= number_format($total_pendapatan, 0, ',', '.') ?>
+                        <div class="stat-number text-rupiah"><?= $dashboard->formatRupiah($dashboard->totalPendapatan) ?>
                         </div>
                         <div class="stat-label">Total Pendapatan</div>
                     </div>
@@ -181,7 +251,7 @@ while ($row = mysqli_fetch_assoc($query)) {
                 <div class="stat-card" onclick="window.location.href='products.php'">
                     <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
                     <div class="stat-content">
-                        <div class="stat-number" style="color: var(--danger-text);"><?= (int) $stok_rendah ?></div>
+                        <div class="stat-number" style="color: var(--danger-text);"><?= (int) $dashboard->stokRendah ?></div>
                         <div class="stat-label">Stok Rendah</div>
                     </div>
                 </div>
@@ -189,7 +259,7 @@ while ($row = mysqli_fetch_assoc($query)) {
                 <div class="stat-card" onclick="window.location.href='transactions.php?filter_pembayaran=pending'">
                     <div class="stat-icon"><i class="fas fa-hourglass-half"></i></div>
                     <div class="stat-content">
-                        <div class="stat-number" style="color: #c2410c;"><?= (int) $transaksi_pending ?></div>
+                        <div class="stat-number" style="color: #c2410c;"><?= (int) $dashboard->transaksiPending ?></div>
                         <div class="stat-label">Pending Payment</div>
                     </div>
                 </div>
@@ -198,7 +268,7 @@ while ($row = mysqli_fetch_assoc($query)) {
                     onclick="window.location.href='transactions.php?filter_pengambilan=belum_diambil'">
                     <div class="stat-icon"><i class="fas fa-box-open"></i></div>
                     <div class="stat-content">
-                        <div class="stat-number" style="color: #9333ea;"><?= (int) $belum_diambil ?></div>
+                        <div class="stat-number" style="color: #9333ea;"><?= (int) $dashboard->belumDiambil ?></div>
                         <div class="stat-label">Belum Diambil</div>
                     </div>
                 </div>
@@ -222,14 +292,13 @@ while ($row = mysqli_fetch_assoc($query)) {
                                             <th>Kode</th>
                                             <th>Customer</th>
                                             <th>Total</th>
-                                            <th>Metode</th>
                                             <th>Status</th>
                                             <th>Tanggal</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <?php if (count($recent_transactions) > 0): ?>
-                                            <?php foreach ($recent_transactions as $t): ?>
+                                        <?php if (count($dashboard->recentTransactions) > 0): ?>
+                                            <?php foreach ($dashboard->recentTransactions as $t): ?>
                                                 <tr>
                                                     <td data-label="Kode" class="fw-semibold">
                                                         <?= htmlspecialchars($t['kode_transaksi']) ?>
@@ -243,38 +312,19 @@ while ($row = mysqli_fetch_assoc($query)) {
                                                         <?php endif; ?>
                                                     </td>
                                                     <td data-label="Total" class="text-rupiah">
-                                                        <strong>Rp <?= number_format($t['total_harga'], 0, ',', '.') ?></strong>
-                                                    </td>
-                                                    <td data-label="Metode">
-                                                        <?php if ($t['metode_pembayaran'] == 'qris'): ?>
-                                                            <span class="badge-custom badge-primary">
-                                                                <i class="fas fa-qrcode"></i> QRIS
-                                                            </span>
-                                                        <?php else: ?>
-                                                            <span class="badge-custom badge-warning">
-                                                                <i class="fas fa-money-bill"></i> COD
-                                                            </span>
-                                                        <?php endif; ?>
+                                                        <strong><?= $dashboard->formatRupiah((float) $t['total_harga']) ?></strong>
                                                     </td>
                                                     <td data-label="Status">
-                                                        <?php if (in_array($t['status_pembayaran'], ['lunas', 'dikonfirmasi'])): ?>
-                                                            <span class="badge-custom badge-success">
-                                                                <i class="fas fa-check"></i> Lunas
-                                                            </span>
-                                                        <?php else: ?>
-                                                            <span class="badge-custom badge-warning">
-                                                                <i class="fas fa-hourglass"></i> Pending
-                                                            </span>
-                                                        <?php endif; ?>
+                                                        <?= $dashboard->getStatusBadge($t['status_pembayaran']) ?>
                                                     </td>
                                                     <td data-label="Tanggal">
-                                                        <?= date('d/m H:i', strtotime($t['tanggal_transaksi'])) ?>
+                                                        <?= $dashboard->formatDate($t['tanggal_transaksi']) ?>
                                                     </td>
                                                 </tr>
                                             <?php endforeach; ?>
                                         <?php else: ?>
                                             <tr>
-                                                <td colspan="6" class="text-center py-4">
+                                                <td colspan="5" class="text-center py-4">
                                                     <div class="empty-state">
                                                         <i class="fas fa-inbox"></i>
                                                         <p class="mb-0">Belum ada transaksi</p>
@@ -288,7 +338,7 @@ while ($row = mysqli_fetch_assoc($query)) {
                         </div>
                     </div>
                 </div>
-                <!-- Low Stock Alert + Quick Actions -->
+                <!-- Low Stock Alert -->
                 <div class="col-lg-4">
                     <!-- Stok Menipis -->
                     <div class="card-custom">
@@ -300,8 +350,8 @@ while ($row = mysqli_fetch_assoc($query)) {
                             </a>
                         </div>
                         <div class="card-body">
-                            <?php if (count($low_stock_products) > 0): ?>
-                                <?php foreach ($low_stock_products as $p): ?>
+                            <?php if (count($dashboard->lowStockProducts) > 0): ?>
+                                <?php foreach ($dashboard->lowStockProducts as $p): ?>
                                     <div class="stock-alert <?= $p['stok'] <= 5 ? 'critical' : '' ?>">
                                         <i class="fas fa-box <?= $p['stok'] <= 5 ? 'text-danger' : 'text-warning' ?>"></i>
                                         <div style="flex: 1;">
@@ -337,8 +387,8 @@ while ($row = mysqli_fetch_assoc($query)) {
                             <a href="transactions.php?filter_pembayaran=pending" class="quick-action-btn warning">
                                 <i class="fas fa-money-check-alt"></i>
                                 <span>Konfirmasi pesanan</span>
-                                <?php if ($transaksi_pending > 0): ?>
-                                    <span class="badge"><?= $transaksi_pending ?></span>
+                                <?php if ($dashboard->transaksiPending > 0): ?>
+                                    <span class="badge"><?= $dashboard->transaksiPending ?></span>
                                 <?php endif; ?>
                             </a>
                         </div>
@@ -351,5 +401,4 @@ while ($row = mysqli_fetch_assoc($query)) {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/dashboard.js"></script>
 </body>
-
 </html>

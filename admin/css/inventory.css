@@ -1016,3 +1016,185 @@
             }
         }
    
+
+        /* ========== COMPACT LAYOUT ========== */
+
+/* Perkecil padding main content */
+.main-content {
+    padding: 1rem 1.25rem;
+}
+
+/* Perkecil gap stats cards */
+.stats-grid {
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.stat-card {
+    padding: 0.9rem;
+}
+
+.stat-icon {
+    width: 42px;
+    height: 42px;
+    font-size: 1rem;
+}
+
+.stat-number {
+    font-size: 1.3rem;
+}
+
+.stat-label {
+    font-size: 0.7rem;
+}
+
+/* Perkecil category stats */
+.category-stats {
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.category-stat {
+    padding: 0.65rem 0.9rem;
+    min-width: 120px;
+}
+
+.category-stat .label {
+    font-size: 0.75rem;
+}
+
+.category-stat .count {
+    font-size: 1.15rem;
+}
+
+.category-stat .qty {
+    font-size: 0.7rem;
+}
+
+/* Perkecil card */
+.card-custom {
+    margin-bottom: 1rem;
+}
+
+.card-header-custom {
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+}
+
+.card-body {
+    padding: 1rem;
+}
+
+/* Perkecil form */
+.form-label {
+    font-size: 0.8rem;
+    margin-bottom: 0.35rem;
+}
+
+.form-control {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+}
+
+textarea.form-control {
+    min-height: 60px;
+}
+
+.form-text {
+    font-size: 0.75rem;
+}
+
+/* Perkecil button */
+.btn-custom {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+}
+
+/* Perkecil tabel inventaris */
+.table-custom thead th {
+    padding: 0.7rem 0.85rem;
+    font-size: 0.75rem;
+}
+
+.table-custom tbody td {
+    padding: 0.75rem 0.85rem;
+    font-size: 0.85rem;
+}
+
+/* Perkecil badge */
+.badge-custom {
+    padding: 0.25rem 0.6rem;
+    font-size: 0.75rem;
+}
+
+/* Perkecil action buttons */
+.action-btn {
+    width: 30px;
+    height: 30px;
+    font-size: 0.8rem;
+    margin-right: 0.2rem;
+}
+
+/* Perkecil filter section */
+.filter-section {
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.filter-section .form-label {
+    font-size: 0.75rem;
+    margin-bottom: 0.25rem;
+}
+
+.filter-section .form-control {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.8rem;
+}
+
+/* Perkecil page header */
+.page-header {
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+}
+
+.page-title {
+    font-size: 1.3rem;
+}
+
+/* Perkecil alert */
+.alert {
+    padding: 0.65rem 1rem;
+    font-size: 0.85rem;
+    margin-bottom: 0.75rem;
+}
+
+/* Responsive untuk layar lebih kecil */
+@media (max-width: 992px) {
+    .col-lg-4, .col-lg-8 {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+}
+
+/* Ultra compact untuk layar kecil */
+@media (max-width: 768px) {
+    .main-content {
+        padding: 0.75rem;
+    }
+    
+    .card-body {
+        padding: 0.75rem;
+    }
+    
+    .table-custom thead th,
+    .table-custom tbody td {
+        padding: 0.6rem 0.5rem;
+        font-size: 0.8rem;
+    }
+    
+    .action-btn {
+        width: 28px;
+        height: 28px;
+        font-size: 0.75rem;
+    }
+}

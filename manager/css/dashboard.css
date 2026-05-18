@@ -923,7 +923,7 @@
                     min-width: auto;
                 }
 
-                /* ✅ FIX: Table rows */
+                /* FIX: Table rows */
                 .table-custom tbody tr {
                     display: block;
                     margin-bottom: 0.9rem;
@@ -932,12 +932,12 @@
                     background: var(--bg-card);
                     box-shadow: var(--shadow-soft);
                     overflow: hidden;
-                    /* ✅ Prevent overflow */
+                    /*  Prevent overflow */
                 }
             }
         }
 
-        /* ✅ EXTRA: Very small screens */
+        /*  EXTRA: Very small screens */
         @media (max-width: 480px) {
             .table-custom tbody td {
                 font-size: 0.82rem;

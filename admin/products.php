@@ -1,111 +1,156 @@
 <?php
 require_once '../config/config.php';
 checkRole('admin');
-$upload_dir = '../assets/images/products/';
-if (!is_dir($upload_dir)) {
-    mkdir($upload_dir, 0777, true);
-}
-$success = '';
-$error = '';
-$print_mode = isset($_GET['print']) && $_GET['print'] == '1';
-
-/// HANDLE ADD PRODUCT
-if (isset($_POST['add_product']) && !$print_mode) {
-    $nama       = mysqli_real_escape_string($conn, trim($_POST['nama_produk']));
-    $deskripsi  = mysqli_real_escape_string($conn, trim($_POST['deskripsi']));
-    $harga      = (float) $_POST['harga'];
-    $stok       = (int) $_POST['stok'];
+class ProductsController {
+    private $conn;
+    private $uploadDir = '../assets/images/products/';
     
-    // ✅ Simpan persis seperti yang diketik (hapus validasi ENUM)
-    $kategori   = mysqli_real_escape_string($conn, trim($_POST['kategori']));
-    if (empty($kategori)) {
-        $kategori = 'lainnya'; // fallback jika kosong
+    // Public properties untuk akses di view
+    public $success = '';
+    public $error = '';
+    public $print_mode = false;
+    
+    // Data untuk view
+    public $all_stock_history = [];
+    public $total_masuk = 0;
+    public $total_keluar = 0;
+    public $product_name = 'Semua Produk';
+    public $period_text = '';
+    public $jenis_text = '';
+    public $products_list = [];
+    public $products = [];
+    
+    // Filters
+    public $filter_product = '';
+    public $filter_jenis = '';
+    public $filter_date_from = '';
+    public $filter_date_to = '';
+
+    public function __construct($connection) {
+        $this->conn = $connection;
+        $this->print_mode = isset($_GET['print']) && $_GET['print'] == '1';
+        $this->ensureUploadDir();
+        $this->handleRequests();
+        $this->loadFilters();
+        $this->loadData();
     }
 
-    $gambar_name = '';
-    if (isset($_FILES['gambar']) && $_FILES['gambar']['error'] == 0) {
-        $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-        $ext = strtolower(pathinfo($_FILES['gambar']['name'], PATHINFO_EXTENSION));
-
-        if (in_array($ext, $allowed)) {
-            $new_filename = uniqid('prod_') . '.' . $ext;
-            $upload_path = $upload_dir . $new_filename;
-
-            if (move_uploaded_file($_FILES['gambar']['tmp_name'], $upload_path)) {
-                $gambar_name = $new_filename;
-            }
+    //uplod data
+    private function ensureUploadDir(): void {
+        if (!is_dir($this->uploadDir)) {
+            mkdir($this->uploadDir, 0777, true);
         }
     }
 
-    // ✅ Gunakan Prepared Statement (aman & kompatibel dengan VARCHAR)
-    $query = "INSERT INTO products (nama_produk, deskripsi, harga, stok, kategori, gambar)
-              VALUES (?, ?, ?, ?, ?, ?)";
-    $stmt = mysqli_prepare($conn, $query);
-    mysqli_stmt_bind_param($stmt, "ssdiss", $nama, $deskripsi, $harga, $stok, $kategori, $gambar_name);
-    
-    if (mysqli_stmt_execute($stmt)) {
-        $success = 'Produk berhasil ditambahkan!';
-    } else {
-        $error = 'Gagal menambah produk: ' . mysqli_error($conn);
-        error_log("Insert product failed: " . mysqli_error($conn));
+    //Handle semua POST/GET requests (CRUD Operations)
+    private function handleRequests(): void {
+        if ($this->print_mode) return;
+
+        //  ADD PRODUCT
+        if (isset($_POST['add_product'])) {
+            $this->addProduct();
+        }
+        
+        //  UPDATE PRODUCT
+        if (isset($_POST['update_product'])) {
+            $this->updateProduct();
+        }
+        
+        // DELETE PRODUCT
+        if (isset($_GET['delete'])) {
+            $this->deleteProduct();
+        }
     }
-    mysqli_stmt_close($stmt);
-}
-// HANDLE UPDATE PRODUCT
-if (isset($_POST['update_product']) && !$print_mode) {
+
+    private function addProduct(): void {
+        $nama       = mysqli_real_escape_string($this->conn, trim($_POST['nama_produk']));
+        $deskripsi  = mysqli_real_escape_string($this->conn, trim($_POST['deskripsi']));
+        $harga      = (float) $_POST['harga'];
+        $stok       = (int) $_POST['stok'];
+        
+        // Simpan kategori persis seperti yang diketik
+        $kategori   = mysqli_real_escape_string($this->conn, trim($_POST['kategori']));
+        if (empty($kategori)) {
+            $kategori = 'lainnya';
+        }
+
+        $gambar_name = $this->handleFileUpload('gambar');
+
+        //  Gunakan Prepared Statement
+        $query = "INSERT INTO products (nama_produk, deskripsi, harga, stok, kategori, gambar)
+                  VALUES (?, ?, ?, ?, ?, ?)";
+        $stmt = mysqli_prepare($this->conn, $query);
+        mysqli_stmt_bind_param($stmt, "ssdiss", $nama, $deskripsi, $harga, $stok, $kategori, $gambar_name);
+        
+        if (mysqli_stmt_execute($stmt)) {
+            $this->success = 'Produk berhasil ditambahkan!';
+        } else {
+            $this->error = 'Gagal menambah produk: ' . mysqli_error($this->conn);
+            error_log("Insert product failed: " . mysqli_error($this->conn));
+        }
+        mysqli_stmt_close($stmt);
+    }
+
+    
+       
+        private function updateProduct(): void {
     $id = (int) $_POST['product_id'];
-    $nama = mysqli_real_escape_string($conn, trim($_POST['nama_produk']));
-    $deskripsi = mysqli_real_escape_string($conn, trim($_POST['deskripsi']));
+    $nama = mysqli_real_escape_string($this->conn, trim($_POST['nama_produk']));
+    $deskripsi = mysqli_real_escape_string($this->conn, trim($_POST['deskripsi']));
     $harga = (float) $_POST['harga'];
     
-    // ✅ PERBAIKAN: Simpan kategori persis seperti yang diketik (teks bebas)
-    $kategori = mysqli_real_escape_string($conn, trim($_POST['kategori']));
+    // Simpan kategori persis seperti yang diketik
+    $kategori = mysqli_real_escape_string($this->conn, trim($_POST['kategori']));
     if (empty($kategori)) {
-        $kategori = 'lainnya'; // fallback jika kosong
+        $kategori = 'lainnya';
     }
     
     $tambah_stok = isset($_POST['tambah_stok']) ? (int) $_POST['tambah_stok'] : 0;
     $kurangi_stok = isset($_POST['kurangi_stok']) ? (int) $_POST['kurangi_stok'] : 0;
-    $stock_keterangan = mysqli_real_escape_string($conn, $_POST['stock_keterangan'] ?? '');
+    $stock_keterangan = mysqli_real_escape_string($this->conn, $_POST['stock_keterangan'] ?? '');
 
-    $current = mysqli_fetch_assoc(mysqli_query($conn, "SELECT stok FROM products WHERE id=$id"));
+    // 🔍 Ambil stok saat ini
+    $current = mysqli_fetch_assoc(mysqli_query($this->conn, "SELECT stok FROM products WHERE id=$id"));
     $old_stock = $current['stok'];
-    $new_stock = $old_stock + $tambah_stok - $kurangi_stok;
+    
+    // 🚨 VALIDASI: Cek apakah pengurangan stok melebihi stok tersedia
+    $available_stock = $old_stock + $tambah_stok;
+    if ($kurangi_stok > $available_stock) {
+        $this->error = "Gagal update produk: Tidak dapat mengurangi stok sebanyak {$kurangi_stok} pcs. "
+                     . "Stok tersedia hanya {$available_stock} pcs (Stok awal: {$old_stock} + Restok: {$tambah_stok})";
+        return; // ⛔ Hentikan proses jika validasi gagal
+    }
+    
+    $new_stock = $available_stock - $kurangi_stok;
 
+    // Record stock movements
     if ($tambah_stok > 0) {
         $ket = !empty($stock_keterangan) ? "Restok: $stock_keterangan" : "Restok manual";
-        mysqli_query($conn, "INSERT INTO stock_movements (product_id, jenis, jumlah, keterangan)
-                            VALUES ($id, 'masuk', $tambah_stok, '$ket')");
+        mysqli_query($this->conn, "INSERT INTO stock_movements (product_id, jenis, jumlah, keterangan)
+                                    VALUES ($id, 'masuk', $tambah_stok, '$ket')");
     }
 
     if ($kurangi_stok > 0) {
         $ket = !empty($stock_keterangan) ? "Pengurangan: $stock_keterangan" : "Pengurangan manual";
-        mysqli_query($conn, "INSERT INTO stock_movements (product_id, jenis, jumlah, keterangan)
-                            VALUES ($id, 'keluar', $kurangi_stok, '$ket')");
+        mysqli_query($this->conn, "INSERT INTO stock_movements (product_id, jenis, jumlah, keterangan)
+                                    VALUES ($id, 'keluar', $kurangi_stok, '$ket')");
     }
 
     $gambar_name = $_POST['gambar_lama'];
 
+    // Handle new image upload
     if (isset($_FILES['gambar']) && $_FILES['gambar']['error'] == 0) {
-        $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-        $filename = $_FILES['gambar']['name'];
-        $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-
-        if (in_array($ext, $allowed)) {
-            if ($gambar_name && file_exists($upload_dir . $gambar_name)) {
-                unlink($upload_dir . $gambar_name);
+        $new_image = $this->handleFileUpload('gambar');
+        if ($new_image) {
+            // Delete old image if exists
+            if ($gambar_name && file_exists($this->uploadDir . $gambar_name)) {
+                unlink($this->uploadDir . $gambar_name);
             }
-
-            $new_filename = uniqid('prod_') . '.' . $ext;
-            $upload_path = $upload_dir . $new_filename;
-
-            if (move_uploaded_file($_FILES['gambar']['tmp_name'], $upload_path)) {
-                $gambar_name = $new_filename;
-            }
+            $gambar_name = $new_image;
         }
     }
 
-    // ✅ Gunakan Prepared Statement untuk UPDATE (lebih aman)
+    // Gunakan Prepared Statement untuk UPDATE
     $query = "UPDATE products SET
               nama_produk=?,
               deskripsi=?,
@@ -114,235 +159,358 @@ if (isset($_POST['update_product']) && !$print_mode) {
               kategori=?,
               gambar=?
               WHERE id=?";
-    $stmt = mysqli_prepare($conn, $query);
+    $stmt = mysqli_prepare($this->conn, $query);
     mysqli_stmt_bind_param($stmt, "ssdissi", $nama, $deskripsi, $harga, $new_stock, $kategori, $gambar_name, $id);
 
     if (mysqli_stmt_execute($stmt)) {
-        $success = 'Produk berhasil diupdate! Stok: ' . $old_stock . ' → ' . $new_stock;
+        $this->success = 'Produk berhasil diupdate! Stok: ' . $old_stock . ' → ' . $new_stock;
     } else {
-        $error = 'Gagal update produk: ' . mysqli_error($conn);
-        error_log("Update product failed: " . mysqli_error($conn));
+        $this->error = 'Gagal update produk: ' . mysqli_error($this->conn);
+        error_log("Update product failed: " . mysqli_error($this->conn));
     }
     mysqli_stmt_close($stmt);
 }
-// HANDLE DELETE PRODUCT
-if (isset($_GET['delete']) && !$print_mode) {
-    $id = (int) $_GET['delete'];
-    $prod = mysqli_fetch_assoc(mysqli_query($conn, "SELECT gambar FROM products WHERE id='$id'"));
 
-    if ($prod) {
-        if ($prod['gambar'] && file_exists($upload_dir . $prod['gambar'])) {
-            unlink($upload_dir . $prod['gambar']);
+    private function deleteProduct(): void {
+        $id = (int) $_GET['delete'];
+        $prod = mysqli_fetch_assoc(mysqli_query($this->conn, "SELECT gambar FROM products WHERE id='$id'"));
+
+        if ($prod) {
+            if ($prod['gambar'] && file_exists($this->uploadDir . $prod['gambar'])) {
+                unlink($this->uploadDir . $prod['gambar']);
+            }
+
+            mysqli_query($this->conn, "DELETE FROM stock_movements WHERE product_id = $id");
+            mysqli_query($this->conn, "DELETE FROM transaction_details WHERE product_id = $id");
+
+            if (mysqli_query($this->conn, "DELETE FROM products WHERE id='$id'")) {
+                header("Location: products.php?success=deleted");
+                exit;
+            }
+        }
+    }
+
+    //Handle file upload dengan validasi
+    private function handleFileUpload(string $fieldName): string {
+        if (!isset($_FILES[$fieldName]) || $_FILES[$fieldName]['error'] != 0) {
+            return '';
         }
 
-        mysqli_query($conn, "DELETE FROM stock_movements WHERE product_id = $id");
-        mysqli_query($conn, "DELETE FROM transaction_details WHERE product_id = $id");
+        $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        $ext = strtolower(pathinfo($_FILES[$fieldName]['name'], PATHINFO_EXTENSION));
 
-        if (mysqli_query($conn, "DELETE FROM products WHERE id='$id'")) {
-            header("Location: products.php?success=deleted");
-            exit;
+        if (!in_array($ext, $allowed)) {
+            return '';
+        }
+
+        $new_filename = uniqid('prod_') . '.' . $ext;
+        $upload_path = $this->uploadDir . $new_filename;
+
+        if (move_uploaded_file($_FILES[$fieldName]['tmp_name'], $upload_path)) {
+            return $new_filename;
+        }
+        return '';
+    }
+
+    //Load filter parameters dari GET
+    private function loadFilters(): void {
+        $this->filter_product = $_GET['filter_product'] ?? '';
+        $this->filter_jenis = $_GET['filter_jenis'] ?? '';
+        $this->filter_date_from = $_GET['filter_date_from'] ?? '';
+        $this->filter_date_to = $_GET['filter_date_to'] ?? '';
+    }
+
+    //Build WHERE clause untuk filter stock history
+    private function buildHistoryWhereClause(): string {
+        $where = "1=1";
+        
+        if ($this->filter_product) {
+            $where .= " AND sm.product_id = " . (int) $this->filter_product;
+        }
+        if ($this->filter_jenis) {
+            $where .= " AND sm.jenis = '" . mysqli_real_escape_string($this->conn, $this->filter_jenis) . "'";
+        }
+        if ($this->filter_date_from) {
+            $where .= " AND DATE(sm.tanggal) >= '" . mysqli_real_escape_string($this->conn, $this->filter_date_from) . "'";
+        }
+        if ($this->filter_date_to) {
+            $where .= " AND DATE(sm.tanggal) <= '" . mysqli_real_escape_string($this->conn, $this->filter_date_to) . "'";
+        }
+        
+        return $where;
+    }
+
+    // Load data untuk view berdasarkan filter
+    private function loadData(): void {
+        //  Load stock history dengan filter
+        $where = $this->buildHistoryWhereClause();
+        $history_query = mysqli_query($this->conn, "
+            SELECT sm.*, p.nama_produk, p.kategori
+            FROM stock_movements sm
+            JOIN products p ON sm.product_id = p.id
+            WHERE $where
+            ORDER BY sm.tanggal DESC
+            LIMIT 500
+        ");
+
+        $this->all_stock_history = [];
+        while ($row = mysqli_fetch_assoc($history_query)) {
+            $this->all_stock_history[] = $row;
+        }
+
+        //  Calculate totals for print report
+        foreach ($this->all_stock_history as $hist) {
+            if ($hist['jenis'] == 'masuk') {
+                $this->total_masuk += $hist['jumlah'];
+            } else {
+                $this->total_keluar += $hist['jumlah'];
+            }
+        }
+
+        //  Product name for report
+        if ($this->filter_product) {
+            $prod = mysqli_fetch_assoc(mysqli_query($this->conn, 
+                "SELECT nama_produk FROM products WHERE id = " . (int) $this->filter_product));
+            if ($prod) {
+                $this->product_name = $prod['nama_produk'];
+            }
+        }
+
+        //  Period text for report
+        if ($this->filter_date_from && $this->filter_date_to) {
+            $this->period_text = date('d M Y', strtotime($this->filter_date_from)) . ' - ' . date('d M Y', strtotime($this->filter_date_to));
+        } elseif ($this->filter_date_from) {
+            $this->period_text = 'Dari ' . date('d M Y', strtotime($this->filter_date_from));
+        } elseif ($this->filter_date_to) {
+            $this->period_text = 'Sampai ' . date('d M Y', strtotime($this->filter_date_to));
+        } else {
+            $this->period_text = 'Semua Periode';
+        }
+
+        //  Jenis text
+        if ($this->filter_jenis) {
+            $this->jenis_text = ' | Jenis: ' . ucfirst($this->filter_jenis);
+        }
+
+        //  Products list for dropdown
+        $products_list_query = mysqli_query($this->conn, "SELECT id, nama_produk FROM products ORDER BY nama_produk");
+        while ($p = mysqli_fetch_assoc($products_list_query)) {
+            $this->products_list[] = $p;
+        }
+
+        //  All products for table
+        $products_query = mysqli_query($this->conn, "SELECT * FROM products ORDER BY created_at DESC");
+        while ($p = mysqli_fetch_assoc($products_query)) {
+            $this->products[] = $p;
         }
     }
-}
 
-// STOCK HISTORY & FILTER
-
-$all_stock_history = [];
-$filter_product = $_GET['filter_product'] ?? '';
-$filter_jenis = $_GET['filter_jenis'] ?? '';
-$filter_date_from = $_GET['filter_date_from'] ?? '';
-$filter_date_to = $_GET['filter_date_to'] ?? '';
-
-$where = "1=1";
-if ($filter_product)
-    $where .= " AND sm.product_id = " . (int) $filter_product;
-if ($filter_jenis)
-    $where .= " AND sm.jenis = '" . mysqli_real_escape_string($conn, $filter_jenis) . "'";
-if ($filter_date_from)
-    $where .= " AND DATE(sm.tanggal) >= '" . mysqli_real_escape_string($conn, $filter_date_from) . "'";
-if ($filter_date_to)
-    $where .= " AND DATE(sm.tanggal) <= '" . mysqli_real_escape_string($conn, $filter_date_to) . "'";
-
-$history_query = mysqli_query($conn, "
-    SELECT sm.*, p.nama_produk, p.kategori
-    FROM stock_movements sm
-    JOIN products p ON sm.product_id = p.id
-    WHERE $where
-    ORDER BY sm.tanggal DESC
-    LIMIT 500
-");
-
-while ($row = mysqli_fetch_assoc($history_query)) {
-    $all_stock_history[] = $row;
-}
-
-// CALCULATE TOTALS FOR PRINT REPORT
-
-$total_masuk = 0;
-$total_keluar = 0;
-foreach ($all_stock_history as $hist) {
-    if ($hist['jenis'] == 'masuk') {
-        $total_masuk += $hist['jumlah'];
-    } else {
-        $total_keluar += $hist['jumlah'];
+    /**
+     * Helper: Get badge class based on stock level
+     */
+    public function getStockBadge(string $stok): string {
+        return $stok < 20 ? 'badge-danger' : 'badge-success';
     }
-}
 
-$product_name = 'Semua Produk';
-if ($filter_product) {
-    $prod = mysqli_fetch_assoc(mysqli_query($conn, "SELECT nama_produk FROM products WHERE id = " . (int) $filter_product));
-    if ($prod) {
-        $product_name = $prod['nama_produk'];
+    /**
+     * Helper: Get badge class for history type
+     */
+    public function getHistoryBadge(string $jenis): string {
+        return $jenis == 'masuk' ? 'badge-success' : 'badge-danger';
     }
-}
 
-$period_text = '';
-if ($filter_date_from && $filter_date_to) {
-    $period_text = date('d M Y', strtotime($filter_date_from)) . ' - ' . date('d M Y', strtotime($filter_date_to));
-} elseif ($filter_date_from) {
-    $period_text = 'Dari ' . date('d M Y', strtotime($filter_date_from));
-} elseif ($filter_date_to) {
-    $period_text = 'Sampai ' . date('d M Y', strtotime($filter_date_to));
-} else {
-    $period_text = 'Semua Periode';
-}
+    /**
+     * Helper: Get icon for history type
+     */
+    public function getHistoryIcon(string $jenis): string {
+        return $jenis == 'masuk' ? 'arrow-down' : 'arrow-up';
+    }
 
-$jenis_text = '';
-if ($filter_jenis) {
-    $jenis_text = ' | Jenis: ' . ucfirst($filter_jenis);
-}
+    /**
+     * Helper: Get sign for stock movement
+     */
+    public function getStockSign(string $jenis): string {
+        return $jenis == 'masuk' ? '+' : '-';
+    }
 
-$products_list = mysqli_query($conn, "SELECT id, nama_produk FROM products ORDER BY nama_produk");
-$products = mysqli_query($conn, "SELECT * FROM products ORDER BY created_at DESC");
-?>
+    /**
+     * Helper: Get text color for stock movement
+     */
+    public function getStockTextColor(string $jenis): string {
+        return $jenis == 'masuk' ? 'text-success' : 'text-danger';
+    }
 
-<?php if ($print_mode): ?>
-    <!DOCTYPE html>
-    <html lang="id">
+    /**
+     * Helper: Format tanggal
+     */
+    public function formatDate(string $datetime, string $format = 'd M Y H:i'): string {
+        return date($format, strtotime($datetime));
+    }
 
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Laporan Riwayat Stok Produk - TEFA COFFEE</title>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-        <link rel="stylesheet" href="css/receipt.css">
-    </head>
+    /**
+     * Helper: Format Rupiah
+     */
+    public function formatRupiah(float $amount): string {
+        return 'Rp ' . number_format($amount, 0, ',', '.');
+    }
 
-    <body>
-        <div class="print-actions">
-            <button onclick="window.print()" class="btn-print">
-                <i class="fas fa-print"></i> Cetak Laporan
-            </button>
-            <a href="products.php" class="btn-close">
-                <i class="fas fa-times"></i> Kembali
-            </a>
-        </div>
-        <div class="container">
-            <div class="report-header">
-                <img src="../assets/images/logopolije.png" alt="Logo" class="logo" onerror="this.style.display='none'">
-                <h1>TEFA COFFEE</h1>
-                <h2>LAPORAN RIWAYAT STOK</h2>
-                <div class="report-info">
-                    <table>
-                        <tr>
-                            <td>Produk</td>
-                            <td>: <?= htmlspecialchars($product_name) ?></td>
-                        </tr>
-                        <tr>
-                            <td>Periode</td>
-                            <td>: <?= htmlspecialchars($period_text) ?><?= htmlspecialchars($jenis_text) ?></td>
-                        </tr>
-                        <tr>
-                            <td>Total Data</td>
-                            <td>: <?= count($all_stock_history) ?> riwayat</td>
-                        </tr>
-                    </table>
-                </div>
+    /**
+     * Helper: Check if image exists
+     */
+    public function imageExists(string $filename): bool {
+        return $filename && file_exists($this->uploadDir . $filename);
+    }
+
+    /**
+     * Helper: Get image path
+     */
+    public function getImagePath(string $filename): string {
+        return '../assets/images/products/' . $filename;
+    }
+
+    /**
+     * Helper: Get current admin name for signature
+     */
+    public function getCurrentAdminName(): string {
+        return htmlspecialchars($_SESSION['nama_lengkap'] ?? $_SESSION['username'] ?? 'Admin');
+    }
+
+    /**
+     * Render print view
+     */
+    public function renderPrintView(): void {
+        ?>
+        <!DOCTYPE html>
+        <html lang="id">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Laporan Riwayat Stok Produk - TEFA COFFEE</title>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+            <link rel="stylesheet" href="css/receipt.css">
+        </head>
+        <body>
+            <div class="print-actions">
+                <button onclick="window.print()" class="btn-print">
+                    <i class="fas fa-print"></i> Cetak Laporan
+                </button>
+                <a href="products.php" class="btn-close">
+                    <i class="fas fa-times"></i> Kembali
+                </a>
             </div>
-            <?php if (count($all_stock_history) > 0): ?>
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 5%;">No</th>
-                            <th style="width: 15%;">Tanggal</th>
-                            <th style="width: 25%;">Nama Produk</th>
-                            <th style="width: 15%;">Kategori</th>
-                            <th style="width: 12%;">Jenis</th>
-                            <th style="width: 13%;">Jumlah</th>
-                            <th style="width: 15%;">Keterangan</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php $no = 1;
-                        foreach ($all_stock_history as $hist): ?>
+            <div class="container">
+                <div class="report-header">
+                    <img src="../assets/images/logopolije.png" alt="Logo" class="logo" onerror="this.style.display='none'">
+                    <h1>TEFA COFFEE</h1>
+                    <h2>LAPORAN RIWAYAT STOK</h2>
+                    <div class="report-info">
+                        <table>
                             <tr>
-                                <td class="text-center"><?= $no++ ?></td>
-                                <td><?= date('d M Y H:i', strtotime($hist['tanggal'])) ?></td>
-                                <td><?= htmlspecialchars($hist['nama_produk']) ?></td>
-                                <td><?= ucfirst($hist['kategori']) ?></td>
-                                <td class="text-center"><?= ucfirst($hist['jenis']) ?></td>
-                                <td class="text-right">
-                                    <?= $hist['jenis'] == 'masuk' ? '+' : '-' ?>            <?= number_format($hist['jumlah'], 0, ',', '.') ?>
-                                </td>
-                                <td><?= htmlspecialchars($hist['keterangan'] ?? '-') ?></td>
+                                <td>Produk</td>
+                                <td>: <?= htmlspecialchars($this->product_name) ?></td>
                             </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-                <div class="summary-box">
-                    <h3>Ringkasan Stok</h3>
-                    <table class="summary-table">
-                        <tr>
-                            <td>Total Stok Masuk</td>
-                            <td>+<?= number_format($total_masuk, 0, ',', '.') ?> pcs</td>
-                        </tr>
-                        <tr>
-                            <td>Total Stok Keluar</td>
-                            <td>-<?= number_format($total_keluar, 0, ',', '.') ?> pcs</td>
-                        </tr>
-                        <tr class="total-row">
-                            <td>Netto Perubahan</td>
-                            <td><?= ($total_masuk - $total_keluar) >= 0 ? '+' : '' ?><?= number_format($total_masuk - $total_keluar, 0, ',', '.') ?>
-                                pcs</td>
-                        </tr>
+                            <tr>
+                                <td>Periode</td>
+                                <td>: <?= htmlspecialchars($this->period_text) ?><?= htmlspecialchars($this->jenis_text) ?></td>
+                            </tr>
+                            <tr>
+                                <td>Total Data</td>
+                                <td>: <?= count($this->all_stock_history) ?> riwayat</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                <?php if (count($this->all_stock_history) > 0): ?>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 5%;">No</th>
+                                <th style="width: 15%;">Tanggal</th>
+                                <th style="width: 25%;">Nama Produk</th>
+                                <th style="width: 15%;">Kategori</th>
+                                <th style="width: 12%;">Jenis</th>
+                                <th style="width: 13%;">Jumlah</th>
+                                <th style="width: 15%;">Keterangan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php $no = 1;
+                            foreach ($this->all_stock_history as $hist): ?>
+                                <tr>
+                                    <td class="text-center"><?= $no++ ?></td>
+                                    <td><?= $this->formatDate($hist['tanggal']) ?></td>
+                                    <td><?= htmlspecialchars($hist['nama_produk']) ?></td>
+                                    <td><?= ucfirst($hist['kategori']) ?></td>
+                                    <td class="text-center"><?= ucfirst($hist['jenis']) ?></td>
+                                    <td class="text-right">
+                                        <?= $this->getStockSign($hist['jenis']) ?> <?= number_format($hist['jumlah'], 0, ',', '.') ?>
+                                    </td>
+                                    <td><?= htmlspecialchars($hist['keterangan'] ?? '-') ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
                     </table>
+                    <div class="summary-box">
+                        <h3>Ringkasan Stok</h3>
+                        <table class="summary-table">
+                            <tr>
+                                <td>Total Stok Masuk</td>
+                                <td>+<?= number_format($this->total_masuk, 0, ',', '.') ?> pcs</td>
+                            </tr>
+                            <tr>
+                                <td>Total Stok Keluar</td>
+                                <td>-<?= number_format($this->total_keluar, 0, ',', '.') ?> pcs</td>
+                            </tr>
+                            <tr class="total-row">
+                                <td>Netto Perubahan</td>
+                                <td><?= ($this->total_masuk - $this->total_keluar) >= 0 ? '+' : '' ?><?= number_format($this->total_masuk - $this->total_keluar, 0, ',', '.') ?> pcs</td>
+                            </tr>
+                        </table>
+                    </div>
+                <?php else: ?>
+                    <div class="empty-state">
+                        <h3>Tidak Ada Data</h3>
+                        <p>Tidak ada riwayat stok yang sesuai dengan filter yang dipilih</p>
+                    </div>
+                <?php endif; ?>
+                <div class="report-footer">
+                    <div class="footer-section">
+                        <h4>Mengetahui,</h4>
+                        <p>Kepala TEFA Coffee</p>
+                        <div class="signature-line"><strong>( ___________________ )</strong></div>
+                    </div>
+                    <div class="footer-section">
+                        <h4>Dibuat Oleh,</h4>
+                        <p>Administrator</p>
+                        <div class="signature-line"><strong>(<?= $this->getCurrentAdminName() ?>)</strong></div>
+                    </div>
                 </div>
-            <?php else: ?>
-                <div class="empty-state">
-                    <h3>Tidak Ada Data</h3>
-                    <p>Tidak ada riwayat stok yang sesuai dengan filter yang dipilih</p>
-                </div>
-            <?php endif; ?>
-            <div class="report-footer">
-                <div class="footer-section">
-                    <h4>Mengetahui,</h4>
-                    <p>Kepala TEFA Coffee</p>
-                    <div class="signature-line"><strong>( ___________________ )</strong></div>
-                </div>
-                <div class="footer-section">
-                    <h4>Dibuat Oleh,</h4>
-                    <p>Administrator</p>
-                    <div class="signature-line"><strong>(
-                            <?= htmlspecialchars($_SESSION['nama_lengkap'] ?? $_SESSION['username'] ?? 'Admin') ?>
-                            )</strong></div>
+                <div class="print-date">
+                    Dicetak pada: <?= date('d M Y, H:i:s') ?> WIB
                 </div>
             </div>
-            <div class="print-date">
-                Dicetak pada: <?= date('d M Y, H:i:s') ?> WIB
-            </div>
-        </div>
-        <script>
-            window.onload = function () {
-                window.print();
-                setTimeout(function () { window.location.href = 'products.php'; }, 1000);
-            };
-            window.onafterprint = function () { window.location.href = 'products.php'; };
-        </script>
-    </body>
-    </html>
-    <?php exit; ?>
-<?php endif; ?>
+            <script>
+                window.onload = function () {
+                    window.print();
+                    setTimeout(function () { window.location.href = 'products.php'; }, 1000);
+                };
+                window.onafterprint = function () { window.location.href = 'products.php'; };
+            </script>
+        </body>
+        </html>
+        <?php
+        exit;
+    }
+}
 
+//  Inisialisasi Controller
+$products = new ProductsController($conn);
+
+// Render print view jika mode print
+if ($products->print_mode) {
+    $products->renderPrintView();
+}
+?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -396,16 +564,15 @@ $products = mysqli_query($conn, "SELECT * FROM products ORDER BY created_at DESC
             </div>
 
             <!-- Alerts -->
-            
-            <?php if ($success): ?>
+            <?php if ($products->success): ?>
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    <i class="fas fa-check-circle"></i> <?= $success ?>
+                    <i class="fas fa-check-circle"></i> <?= $products->success ?>
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             <?php endif; ?>
-            <?php if ($error): ?>
+            <?php if ($products->error): ?>
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <i class="fas fa-exclamation-circle"></i> <?= $error ?>
+                    <i class="fas fa-exclamation-circle"></i> <?= $products->error ?>
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             <?php endif; ?>
@@ -423,12 +590,11 @@ $products = mysqli_query($conn, "SELECT * FROM products ORDER BY created_at DESC
                                 <label class="form-label fw-semibold">Nama Produk <span
                                         class="text-danger">*</span></label>
                                 <input type="text" name="nama_produk" class="form-control" placeholder="masukkan nama produk" required>
-
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label fw-semibold">Harga (Rp) <span
                                         class="text-danger">*</span></label>
-                                <input type="number" name="harga" class="form-control" min="0" step="100" placeholder="masukkan harga"required>
+                                <input type="number" name="harga" class="form-control" min="0" step="100" placeholder="masukkan harga" required>
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label fw-semibold">Stok Awal <span
@@ -506,14 +672,11 @@ $products = mysqli_query($conn, "SELECT * FROM products ORDER BY created_at DESC
                                 <select name="filter_product" id="filter_product" class="form-control"
                                     onchange="applyFilter()">
                                     <option value="">Semua Produk</option>
-                                    <?php
-                                    mysqli_data_seek($products_list, 0);
-                                    while ($p = mysqli_fetch_assoc($products_list)):
-                                        ?>
-                                        <option value="<?= $p['id'] ?>" <?= $filter_product == $p['id'] ? 'selected' : '' ?>>
+                                    <?php foreach ($products->products_list as $p): ?>
+                                        <option value="<?= $p['id'] ?>" <?= $products->filter_product == $p['id'] ? 'selected' : '' ?>>
                                             <?= htmlspecialchars($p['nama_produk']) ?>
                                         </option>
-                                    <?php endwhile; ?>
+                                    <?php endforeach; ?>
                                 </select>
                             </div>
                             <div class="col-md-2">
@@ -522,8 +685,8 @@ $products = mysqli_query($conn, "SELECT * FROM products ORDER BY created_at DESC
                                 <select name="filter_jenis" id="filter_jenis" class="form-control"
                                     onchange="applyFilter()">
                                     <option value="">Semua</option>
-                                    <option value="masuk" <?= $filter_jenis == 'masuk' ? 'selected' : '' ?>>Masuk</option>
-                                    <option value="keluar" <?= $filter_jenis == 'keluar' ? 'selected' : '' ?>>Keluar
+                                    <option value="masuk" <?= $products->filter_jenis == 'masuk' ? 'selected' : '' ?>>Masuk</option>
+                                    <option value="keluar" <?= $products->filter_jenis == 'keluar' ? 'selected' : '' ?>>Keluar
                                     </option>
                                 </select>
                             </div>
@@ -531,13 +694,13 @@ $products = mysqli_query($conn, "SELECT * FROM products ORDER BY created_at DESC
                                 <label class="form-label"><i class="fas fa-calendar-alt me-1 text-muted"></i>Dari
                                     Tanggal</label>
                                 <input type="date" name="filter_date_from" id="filter_date_from" class="form-control"
-                                    value="<?= htmlspecialchars($filter_date_from) ?>" onchange="applyFilter()">
+                                    value="<?= htmlspecialchars($products->filter_date_from) ?>" onchange="applyFilter()">
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label"><i class="fas fa-calendar-check me-1 text-muted"></i>Sampai
                                     Tanggal</label>
                                 <input type="date" name="filter_date_to" id="filter_date_to" class="form-control"
-                                    value="<?= htmlspecialchars($filter_date_to) ?>" onchange="applyFilter()">
+                                    value="<?= htmlspecialchars($products->filter_date_to) ?>" onchange="applyFilter()">
                             </div>
                         </div>
                     </form>
@@ -555,23 +718,20 @@ $products = mysqli_query($conn, "SELECT * FROM products ORDER BY created_at DESC
                                     </tr>
                                 </thead>
                                 <tbody id="historyTableBody">
-                                    <?php if (count($all_stock_history) > 0): ?>
-                                        <?php foreach (array_slice($all_stock_history, 0, 10) as $hist): ?>
+                                    <?php if (count($products->all_stock_history) > 0): ?>
+                                        <?php foreach (array_slice($products->all_stock_history, 0, 10) as $hist): ?>
                                             <tr>
-                                                <td><?= date('d M Y H:i', strtotime($hist['tanggal'])) ?></td>
+                                                <td><?= $products->formatDate($hist['tanggal']) ?></td>
                                                 <td class="fw-semibold"><?= htmlspecialchars($hist['nama_produk']) ?></td>
                                                 <td><?= ucfirst($hist['kategori']) ?></td>
                                                 <td>
-                                                    <span
-                                                        class="badge history-badge <?= $hist['jenis'] == 'masuk' ? 'badge-success' : 'badge-danger' ?>">
-                                                        <i
-                                                            class="fas fa-<?= $hist['jenis'] == 'masuk' ? 'arrow-down' : 'arrow-up' ?>"></i>
+                                                    <span class="badge history-badge <?= $products->getHistoryBadge($hist['jenis']) ?>">
+                                                        <i class="fas fa-<?= $products->getHistoryIcon($hist['jenis']) ?>"></i>
                                                         <?= ucfirst($hist['jenis']) ?>
                                                     </span>
                                                 </td>
-                                                <td
-                                                    class="fw-bold <?= $hist['jenis'] == 'masuk' ? 'text-success' : 'text-danger' ?>">
-                                                    <?= $hist['jenis'] == 'masuk' ? '+' : '-' ?>        <?= $hist['jumlah'] ?>
+                                                <td class="fw-bold <?= $products->getStockTextColor($hist['jenis']) ?>">
+                                                    <?= $products->getStockSign($hist['jenis']) ?> <?= $hist['jumlah'] ?>
                                                 </td>
                                                 <td><?= htmlspecialchars($hist['keterangan'] ?? '-') ?></td>
                                             </tr>
@@ -591,19 +751,19 @@ $products = mysqli_query($conn, "SELECT * FROM products ORDER BY created_at DESC
                             </table>
                         </div>
                     </div>
-                    <?php if (count($all_stock_history) > 10): ?>
+                    <?php if (count($products->all_stock_history) > 10): ?>
                         <div class="text-center mt-3">
                             <button class="btn-custom btn-coffee" onclick="openHistoryModal()">
                                 <i class="fas fa-list"></i> Lihat Semua Riwayat (<span
-                                    id="totalHistoryCount"><?= count($all_stock_history) ?></span> data)
+                                    id="totalHistoryCount"><?= count($products->all_stock_history) ?></span> data)
                             </button>
                         </div>
                     <?php endif; ?>
                     <div class="mt-3 text-end">
                         <small class="text-muted">
                             <i class="fas fa-database me-1"></i>
-                            Menampilkan <strong id="displayedCount"><?= count($all_stock_history) ?></strong> dari
-                            <strong id="totalCount"><?= count($all_stock_history) ?></strong> riwayat
+                            Menampilkan <strong id="displayedCount"><?= count($products->all_stock_history) ?></strong> dari
+                            <strong id="totalCount"><?= count($products->all_stock_history) ?></strong> riwayat
                         </small>
                     </div>
                 </div>
@@ -628,11 +788,11 @@ $products = mysqli_query($conn, "SELECT * FROM products ORDER BY created_at DESC
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php while ($product = mysqli_fetch_assoc($products)): ?>
+                                <?php foreach ($products->products as $product): ?>
                                     <tr>
                                         <td data-label="Foto">
-                                            <?php if ($product['gambar'] && file_exists($upload_dir . $product['gambar'])): ?>
-                                                <img src="../assets/images/products/<?= htmlspecialchars($product['gambar']) ?>"
+                                            <?php if ($products->imageExists($product['gambar'])): ?>
+                                                <img src="<?= $products->getImagePath($product['gambar']) ?>"
                                                     alt="<?= htmlspecialchars($product['nama_produk']) ?>"
                                                     class="product-thumb">
                                             <?php else: ?>
@@ -642,26 +802,33 @@ $products = mysqli_query($conn, "SELECT * FROM products ORDER BY created_at DESC
                                         <td data-label="Nama" class="fw-semibold">
                                             <?= htmlspecialchars($product['nama_produk']) ?></td>
                                         <td data-label="Kategori"><?= ucfirst($product['kategori']) ?></td>
-                                        <td data-label="Harga" class="text-rupiah">Rp
-                                            <?= number_format($product['harga'], 0, ',', '.') ?></td>
+                                        <td data-label="Harga" class="text-rupiah"><?= $products->formatRupiah($product['harga']) ?></td>
                                         <td data-label="Stok">
-                                            <span
-                                                class="badge <?= $product['stok'] < 20 ? 'badge-danger' : 'badge-success' ?>">
+                                            <span class="badge <?= $products->getStockBadge($product['stok']) ?>">
                                                 <?= $product['stok'] ?>
                                             </span>
                                         </td>
-                                        <td data-label="Aksi">
-                                            <button class="btn btn-sm btn-warning"
-                                                onclick="editProduct(<?= $product['id'] ?>, '<?= addslashes($product['nama_produk']) ?>', '<?= addslashes($product['deskripsi'] ?? '') ?>', <?= $product['harga'] ?>, <?= $product['stok'] ?>, '<?= $product['kategori'] ?>', '<?= $product['gambar'] ?>')">
-                                                <i class="fas fa-edit"></i> Edit
-                                            </button>
-                                            <a href="?delete=<?= $product['id'] ?>" class="btn btn-sm btn-danger"
-                                                onclick="return confirm(' Yakin hapus produk ini?\nPeringatan:\n- Riwayat stok akan dihapus\n- Detail transaksi akan dihapus\nProduk: <?= addslashes($product['nama_produk']) ?>')">
-                                                <i class="fas fa-trash"></i> Hapus
-                                            </a>
-                                        </td>
+                                       <!-- Cari bagian ini di dalam loop produk -->
+                                    <td data-label="Aksi">
+                                        <button class="btn btn-sm btn-warning"
+                                            onclick='editProduct(
+                                                <?= json_encode($product['id']) ?>,
+                                                <?= json_encode($product['nama_produk']) ?>,
+                                                <?= json_encode($product['deskripsi'] ?? '') ?>,
+                                                <?= json_encode($product['harga']) ?>,
+                                                <?= json_encode($product['stok']) ?>,
+                                                <?= json_encode($product['kategori']) ?>,
+                                                <?= json_encode($product['gambar']) ?>
+                                            )'title="Edit Produk">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </button>
+                                    <a href="?delete=<?= (int) $product['id'] ?>" class="btn btn-sm btn-danger"
+                                        onclick="return confirm('Yakin hapus produk ini?\\nPeringatan:\\n- Riwayat stok akan dihapus\\n- Detail transaksi akan dihapus\\nProduk: <?= json_encode($product['nama_produk']) ?>')">
+                                        <i class="fas fa-trash"></i> Hapus
+                                    </a>
+                                </td>
                                     </tr>
-                                <?php endwhile; ?>
+                                <?php endforeach; ?>
                             </tbody>
                         </table>
                     </div>
@@ -676,7 +843,7 @@ $products = mysqli_query($conn, "SELECT * FROM products ORDER BY created_at DESC
             <div class="modal-content">
                 <form method="POST" enctype="multipart/form-data">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="editModalLabel">>Edit Produk</h5>
+                        <h5 class="modal-title" id="editModalLabel">Edit Produk</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
@@ -789,23 +956,20 @@ $products = mysqli_query($conn, "SELECT * FROM products ORDER BY created_at DESC
                                 </tr>
                             </thead>
                             <tbody id="historyModalBody">
-                                <?php if (count($all_stock_history) > 0): ?>
-                                    <?php foreach ($all_stock_history as $hist): ?>
+                                <?php if (count($products->all_stock_history) > 0): ?>
+                                    <?php foreach ($products->all_stock_history as $hist): ?>
                                         <tr>
-                                            <td><?= date('d M Y H:i', strtotime($hist['tanggal'])) ?></td>
+                                            <td><?= $products->formatDate($hist['tanggal']) ?></td>
                                             <td class="fw-semibold"><?= htmlspecialchars($hist['nama_produk']) ?></td>
                                             <td><?= ucfirst($hist['kategori']) ?></td>
                                             <td>
-                                                <span
-                                                    class="badge history-badge <?= $hist['jenis'] == 'masuk' ? 'badge-success' : 'badge-danger' ?>">
-                                                    <i
-                                                        class="fas fa-<?= $hist['jenis'] == 'masuk' ? 'arrow-down' : 'arrow-up' ?>"></i>
+                                                <span class="badge history-badge <?= $products->getHistoryBadge($hist['jenis']) ?>">
+                                                    <i class="fas fa-<?= $products->getHistoryIcon($hist['jenis']) ?>"></i>
                                                     <?= ucfirst($hist['jenis']) ?>
                                                 </span>
                                             </td>
-                                            <td
-                                                class="fw-bold <?= $hist['jenis'] == 'masuk' ? 'text-success' : 'text-danger' ?>">
-                                                <?= $hist['jenis'] == 'masuk' ? '+' : '-' ?>        <?= $hist['jumlah'] ?>
+                                            <td class="fw-bold <?= $products->getStockTextColor($hist['jenis']) ?>">
+                                                <?= $products->getStockSign($hist['jenis']) ?> <?= $hist['jumlah'] ?>
                                             </td>
                                             <td><?= htmlspecialchars($hist['keterangan'] ?? '-') ?></td>
                                         </tr>
@@ -818,7 +982,7 @@ $products = mysqli_query($conn, "SELECT * FROM products ORDER BY created_at DESC
                             </tbody>
                         </table>
                     </div>
-                    <div class="mt-3 text-end"><small class="text-muted">Menampilkan <?= count($all_stock_history) ?>
+                    <div class="mt-3 text-end"><small class="text-muted">Menampilkan <?= count($products->all_stock_history) ?>
                             riwayat terbaru</small></div>
                 </div>
                 <div class="modal-footer">
@@ -831,6 +995,6 @@ $products = mysqli_query($conn, "SELECT * FROM products ORDER BY created_at DESC
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="js/products.js"></script>
+    <script src="js/products.js?v=1.1"></script>
 </body>
 </html>

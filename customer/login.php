@@ -99,7 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                             placeholder="Masukkan Password Anda" required autocomplete="current-password">
                         <button type="button" class="password-toggle" id="togglePassword" title="Lihat password"
                             aria-label="Toggle password visibility">
-                            <i class="fas fa-eye"></i>
+                            <i class=""></i>
                         </button>
                     </div>
                 </div>

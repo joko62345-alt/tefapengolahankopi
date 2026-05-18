@@ -449,7 +449,7 @@ $products = mysqli_query($conn, "SELECT * FROM products WHERE stok > 0 ORDER BY 
                         <div>Dukungan Anda membantu</div>
                         <div>mahasiswa Politeknik Jember</div>
                         <div style="font-weight: bold; margin-top: 5px;">Struk ini sah tanpa tanda tangan</div>
-                        <div style="margin-top: 5px; font-size: 8px;" id="receiptTimestamp"></div>
+                        
                     </div>
                 </div>
 
@@ -486,7 +486,7 @@ function formatRupiahPro(amount) {
     }).format(amount).replace('Rp', 'Rp ').trim();
 }
 
-// ✅ Add to Cart
+//  Add to Cart
 function addToCart(id, name, price, stock) {
     const existing = cart.find(i => i.id === id);
     
@@ -512,7 +512,7 @@ function addToCart(id, name, price, stock) {
     saveCart();
 }
 
-// ✅ Remove from Cart
+//  Remove from Cart
 function removeFromCart(index) {
     if (cart[index]) {
         cart.splice(index, 1);
@@ -522,7 +522,7 @@ function removeFromCart(index) {
     }
 }
 
-// ✅ Update Quantity
+//  Update Quantity
 function updateQty(index, change) {
     if (!cart[index]) return;
     
@@ -537,7 +537,7 @@ function updateQty(index, change) {
     }
 }
 
-// ✅ Update Cart Display (Sidebar Widget)
+//  Update Cart Display (Sidebar Widget)
 function updateCart() {
     const cartItemsEl = document.getElementById('cartItems');
     const cartSummaryEl = document.getElementById('cartSummary');
@@ -603,7 +603,7 @@ function updateCart() {
     if (cartSummaryEl) cartSummaryEl.style.display = 'block';
 }
 
-// ✅ Save Cart to Session (AJAX)
+//  Save Cart to Session (AJAX)
 function saveCart() {
     fetch('ajax_cart.php', {
         method: 'POST',
@@ -624,7 +624,7 @@ function saveCart() {
     });
 }
 
-// ✅ Populate Checkout Modal Items (HANYA update dynamic content)
+//  Populate Checkout Modal Items (HANYA update dynamic content)
 function populateCheckoutItems() {
     const container = document.getElementById('checkoutItems');
     if (!container || !cart || cart.length === 0) {
@@ -660,7 +660,7 @@ function populateCheckoutItems() {
     
     if (container) container.innerHTML = html;
     
-    // ✅ HANYA update angka/harga (dynamic), JANGAN ubah teks statis
+    //  HANYA update angka/harga (dynamic), JANGAN ubah teks statis
     if (document.getElementById('subtotalDisplay')) {
         document.getElementById('subtotalDisplay').textContent = formatRupiahPro(subtotal);
     }
@@ -670,10 +670,10 @@ function populateCheckoutItems() {
     if (document.getElementById('cartData')) {
         document.getElementById('cartData').value = JSON.stringify(cart);
     }
-    // ❌ JANGAN ubah: section titles, button text, labels, dll (biarkan dari HTML)
+    
 }
 
-// ✅ Select Payment Method
+//  Select Payment Method
 function selectPayment(method) {
     if (!method) return;
     
@@ -699,7 +699,7 @@ function selectPayment(method) {
     }
 }
 
-// ✅ Show Checkout Modal - TIDAK override text tombol
+//  Show Checkout Modal - TIDAK override text tombol
 function showCheckoutModal() {
     if (!cart || cart.length === 0) {
         showNotification('error', 'Keranjang belanja masih kosong');
@@ -709,12 +709,11 @@ function showCheckoutModal() {
     // Populate items (hanya dynamic content)
     populateCheckoutItems();
     
-    // ✅ Reset button state TANPA ubah text
+    //  Reset button state TANPA ubah text
     const submitBtn = document.getElementById('btnBayar');
     if (submitBtn) {
         submitBtn.disabled = false;
-        // ❌ JANGAN lakukan: submitBtn.innerHTML = '...'
-        // ✅ Text tombol tetap sesuai HTML, bisa diedit bebas
+        
     }
     
     // Reset payment selection
@@ -733,13 +732,13 @@ function showCheckoutModal() {
     modal.show();
 }
 
-// ✅ Show Profile Modal
+//  Show Profile Modal
 function showProfileModal() {
     const modal = new bootstrap.Modal(document.getElementById('profileModal'));
     modal.show();
 }
 
-// ✅ View Receipt (Same as transactions.php)
+//  View Receipt (Same as transactions.php)
 function viewReceipt(kode) {
     fetch(`receipt.php?kode=${encodeURIComponent(kode)}&format=json`, {
         headers: {
@@ -763,9 +762,9 @@ function viewReceipt(kode) {
     });
 }
 
-// ✅ Populate Receipt Modal (HANYA dynamic content)
+//  Populate Receipt Modal (HANYA dynamic content)
 function populateReceiptModal(data) {
-    // ✅ Update hanya data dinamis dari database
+    //  Update hanya data dinamis dari database
     if (document.getElementById('receiptKode')) {
         document.getElementById('receiptKode').textContent = data.kode_transaksi;
     }
@@ -843,10 +842,10 @@ function populateReceiptModal(data) {
     if (document.getElementById('receiptTimestamp')) {
         document.getElementById('receiptTimestamp').textContent = 'Dicetak: ' + new Date().toLocaleString('id-ID');
     }
-    // ❌ JANGAN ubah: header struk, footer struk, teks statis (biarkan dari HTML)
+    
 }
 
-// ✅ Format Date Indonesia
+//  Format Date Indonesia
 function formatDateIndonesia(dateString) {
     if (!dateString) return '-';
     const date = new Date(dateString);
@@ -858,7 +857,7 @@ function formatDateIndonesia(dateString) {
     return `${day}/${month}/${year} ${hours}:${minutes}`;
 }
 
-// ✅ Print Receipt
+//  Print Receipt
 function printModalReceipt() {
     const printWindow = window.open('', '_blank', 'width=400,height=700');
     const modalContent = document.querySelector('#receiptModal .modal-content');
@@ -901,7 +900,7 @@ function printModalReceipt() {
     setTimeout(() => printWindow.print(), 500);
 }
 
-// ✅ Show Notification Toast
+//  Show Notification Toast
 function showNotification(type, message) {
     // Remove existing toast
     const existing = document.querySelector('.toast-notification');
@@ -930,7 +929,7 @@ function showNotification(type, message) {
     }, 3000);
 }
 
-// ✅ Prevent Double Submit on Checkout Form
+//  Prevent Double Submit on Checkout Form
 function initCheckoutForm() {
     const checkoutForm = document.getElementById('checkoutForm');
     if (!checkoutForm) return;
@@ -939,16 +938,16 @@ function initCheckoutForm() {
         const submitBtn = document.getElementById('btnBayar');
         if (submitBtn) {
             submitBtn.disabled = true;
-            // ✅ Hanya ubah saat loading, text asli tetap dari HTML
+            //  Hanya ubah saat loading, text asli tetap dari HTML
             submitBtn.dataset.originalText = submitBtn.innerHTML;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
         }
     });
 }
 
-// ✅ Initialize on DOM Ready
+//  Initialize on DOM Ready
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('✅ JavaScript loaded - Cart:', cart);
+    console.log(' JavaScript loaded - Cart:', cart);
     updateCart();
     initCheckoutForm();
     

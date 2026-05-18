@@ -95,3 +95,60 @@
             }
         });
    
+        // Validasi stok keluar tidak melebihi stok tersedia
+function validateStockOut() {
+    const jenis = document.querySelector('select[name="jenis"]').value;
+    const jumlahInput = document.querySelector('input[name="jumlah"]');
+    const jumlah = parseFloat(jumlahInput.value) || 0;
+    const namaBiji = document.querySelector('input[name="nama_biji_kopi"]').value.trim();
+    
+    if (jenis === 'keluar' && jumlah > 0 && namaBiji) {
+        // Fetch stok tersedia via AJAX
+        fetch(`api/get_stock.php?nama_biji_kopi=${encodeURIComponent(namaBiji)}`)
+            .then(res => res.json())
+            .then(data => {
+                const availableStock = parseFloat(data.stok) || 0;
+                
+                if (jumlah > availableStock) {
+                    alert(`⚠️ Stok tidak mencukupi!\n\n` +
+                          `Biji Kopi: ${namaBiji}\n` +
+                          `Stok tersedia: ${availableStock.toFixed(1)} kg\n` +
+                          `Anda mencoba mengurangi: ${jumlah.toFixed(1)} kg\n\n` +
+                          `Silakan kurangi jumlah atau lakukan restok terlebih dahulu.`);
+                    jumlahInput.value = availableStock.toFixed(1);
+                    jumlahInput.focus();
+                    return false;
+                }
+            })
+            .catch(err => console.error('Error checking stock:', err));
+    }
+    return true;
+}
+
+// Attach validation to form submit
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form[method="POST"]');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const jenis = document.querySelector('select[name="jenis"]').value;
+            if (jenis === 'keluar') {
+                // Untuk validasi instan tanpa AJAX, kita bisa tampilkan warning saja
+                const jumlah = parseFloat(document.querySelector('input[name="jumlah"]').value) || 0;
+                if (jumlah > 1000) { // Threshold warning (opsional)
+                    if (!confirm(`⚠️ Anda akan mengurangi stok sebanyak ${jumlah.toFixed(1)} kg.\n\nYakin ingin melanjutkan?`)) {
+                        e.preventDefault();
+                    }
+                }
+            }
+        });
+    }
+    
+    // Auto-hide alert after 5 seconds
+    const alert = document.querySelector('.alert-success, .alert-danger');
+    if (alert) {
+        setTimeout(() => {
+            alert.classList.add('fade');
+            setTimeout(() => alert.remove(), 300);
+        }, 5000);
+    }
+});

@@ -39,40 +39,88 @@
                 reader.readAsDataURL(input.files[0]);
             }
         }
-        function editProduct(id, nama, deskripsi, harga, stok, kategori, gambar) {
-    // Isi field-form dengan data produk
-    document.getElementById('edit_id').value = id;
-    document.getElementById('edit_nama').value = nama;
-    document.getElementById('edit_deskripsi').value = deskripsi;
-    document.getElementById('edit_harga').value = harga;
-    document.getElementById('edit_stok_display').value = stok;
-    
-    // ✅ PERBAIKAN: Isi input text kategori (bukan select)
-    document.getElementById('edit_kategori').value = kategori;
-    
-    document.getElementById('edit_gambar_lama').value = gambar;
-    
-    // Handle gambar saat ini
-    const currentImg = document.getElementById('edit_current_img');
-    const noImg = document.getElementById('edit_no_img');
-    if (gambar && gambar !== '') {
-        currentImg.src = '../assets/images/products/' + gambar;
-        currentImg.style.display = 'block';
-        noImg.style.display = 'none';
-    } else {
-        currentImg.style.display = 'none';
-        noImg.style.display = 'flex';
+            function editProduct(id, nama, deskripsi, harga, stok, kategori, gambar) {
+    try {
+        console.log('🔧 editProduct called:', { id, nama, stok }); // Debug log
+        
+        // Helper: aman set value jika elemen ada
+        const setValue = (elementId, value) => {
+            const el = document.getElementById(elementId);
+            if (el) el.value = value ?? '';
+            else console.warn(`⚠️ Element #${elementId} not found`);
+        };
+
+        const setText = (elementId, text) => {
+            const el = document.getElementById(elementId);
+            if (el) el.textContent = text ?? '0';
+        };
+
+        const setStyle = (elementId, style, value) => {
+            const el = document.getElementById(elementId);
+            if (el) el.style[style] = value;
+        };
+
+        // Isi field form
+        setValue('edit_id', id);
+        setValue('edit_nama', nama);
+        setValue('edit_deskripsi', deskripsi);
+        setValue('edit_harga', harga);
+        setValue('edit_stok_display', stok);
+        setValue('edit_kategori', kategori); // ✅ input text, bukan select
+        setValue('edit_gambar_lama', gambar);
+        
+        // Reset stok adjustments
+        setValue('edit_tambah_stok', '');
+        setValue('edit_kurangi_stok', '');
+        setValue('edit_stock_keterangan', '');
+        setText('new_stock_value', stok);
+
+        // Handle gambar
+        const currentImg = document.getElementById('edit_current_img');
+        const noImg = document.getElementById('edit_no_img');
+        
+        if (currentImg && noImg) {
+            if (gambar && gambar !== '') {
+                currentImg.src = '../assets/images/products/' + gambar;
+                currentImg.style.display = 'block';
+                noImg.style.display = 'none';
+            } else {
+                currentImg.style.display = 'none';
+                noImg.style.display = 'flex';
+            }
+        }
+
+        // Clear preview baru
+        const previewEdit = document.getElementById('previewEdit');
+        if (previewEdit) previewEdit.src = '';
+
+        // ✅ Pastikan Bootstrap sudah load sebelum bikin modal
+        if (typeof bootstrap === 'undefined' || !bootstrap.Modal) {
+            console.error('❌ Bootstrap.Modal not ready yet!');
+            // Fallback: reload halaman dengan hash untuk buka modal
+            window.location.hash = `#edit-${id}`;
+            return;
+        }
+
+        const modalEl = document.getElementById('editModal');
+        if (!modalEl) {
+            console.error('❌ Modal element #editModal not found!');
+            return;
+        }
+
+        // Cek apakah modal sudah di-inisialisasi sebelumnya
+        let modal = bootstrap.Modal.getInstance(modalEl);
+        if (!modal) {
+            modal = new bootstrap.Modal(modalEl);
+        }
+        modal.show();
+        
+        console.log(' Modal shown successfully');
+        
+    } catch (e) {
+        console.error(' Error in editProduct():', e);
+        alert('Gagal membuka form edit. Silakan refresh halaman.');
     }
-    
-    // Reset field stok perubahan
-    document.getElementById('edit_tambah_stok').value = '';
-    document.getElementById('edit_kurangi_stok').value = '';
-    document.getElementById('edit_stock_keterangan').value = '';
-    document.getElementById('new_stock_value').textContent = stok;
-    
-    // Tampilkan modal
-    const modal = new bootstrap.Modal(document.getElementById('editModal'));
-    modal.show();
 }
         // Tutup fungsi di sini, jangan sebelumnya!
 
@@ -249,3 +297,4 @@
             }
         });
     
+        

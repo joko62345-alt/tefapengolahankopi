@@ -175,7 +175,7 @@ mysqli_data_seek($details, 0);
             <div class="note">Dukungan Anda membantu</div>
             <div class="note">mahasiswa Politeknik Jember</div>
             <div class="note" style="margin-top:5px;font-weight:bold;">Struk ini sah tanpa tanda tangan</div>
-            <div class="timestamp"><?= date('d/m/Y H:i:s') ?></div>
+            
         </div>
     </div>
 

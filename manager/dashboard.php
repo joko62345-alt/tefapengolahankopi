@@ -1,30 +1,153 @@
 <?php
+
 require_once '../config/config.php';
 checkRole('manager');
 
-// Statistics - Transactions & Revenue
-$total_transaksi = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM transactions WHERE status_pembayaran IN ('lunas','dikonfirmasi')"))['total'];
-$total_pendapatan = mysqli_fetch_assoc(mysqli_query($conn, "SELECT SUM(total_harga) as total FROM transactions WHERE status_pembayaran IN ('lunas','dikonfirmasi')"))['total'] ?? 0;
-$total_produk = mysqli_fetch_assoc(mysqli_query($conn, "SELECT SUM(stok) as total FROM products"))['total'];
-$stok_kritis = mysqli_query($conn, "SELECT * FROM products WHERE stok < 20");
+class ManagerDashboardController {
+    private $conn;
+    
+    // Public properties untuk akses di view
+    public $total_transaksi = 0;
+    public $total_pendapatan = 0;
+    public $total_produk = 0;
+    public $total_biji_kopi = 0;
+    public $stok_kritis_count = 0;
+    public $stok_kritis_products = [];
+    public $beans_kritis = [];
+    public $coffee_beans = [];
+    public $sales_data = [];
+    public $chart_labels = [];
+    public $chart_data = [];
 
-// 🆕 Coffee Beans Statistics
-$coffee_beans = mysqli_query($conn, "SELECT * FROM coffee_beans WHERE stok > 0 ORDER BY nama_biji_kopi ASC");
-$total_biji_kopi = mysqli_fetch_assoc(mysqli_query($conn, "SELECT SUM(stok) as total FROM coffee_beans WHERE stok > 0"))['total'] ?? 0;
-$beans_kritis = mysqli_query($conn, "SELECT * FROM coffee_beans WHERE stok < 10 AND stok > 0");
+    public function __construct($connection) {
+        $this->conn = $connection;
+        $this->loadData();
+    }
 
-// Sales per product
-$sales_per_product = mysqli_query($conn, "
-    SELECT p.nama_produk, SUM(td.quantity) as total_terjual, SUM(td.subtotal) as total_pendapatan
-    FROM transaction_details td
-    JOIN products p ON td.product_id = p.id
-    JOIN transactions t ON td.transaction_id = t.id
-    WHERE t.status_pembayaran IN ('lunas','dikonfirmasi')
-    GROUP BY p.id
-    ORDER BY total_terjual DESC
-");
+    /**
+     * Load semua data dashboard dari sumber yang sama dengan admin
+     */
+    private function loadData(): void {
+        // 🔹 Statistics - Transactions & Revenue (sama seperti admin)
+        $this->total_transaksi = (int) (mysqli_fetch_assoc(mysqli_query($this->conn, 
+            "SELECT COUNT(*) as total FROM transactions WHERE status_pembayaran IN ('lunas','dikonfirmasi')"))['total'] ?? 0);
+        
+        $this->total_pendapatan = (float) (mysqli_fetch_assoc(mysqli_query($this->conn, 
+            "SELECT SUM(total_harga) as total FROM transactions WHERE status_pembayaran IN ('lunas','dikonfirmasi')"))['total'] ?? 0);
+        
+        $this->total_produk = (int) (mysqli_fetch_assoc(mysqli_query($this->conn, 
+            "SELECT SUM(stok) as total FROM products"))['total'] ?? 0);
+
+        // 🔹 Stok Kritis Products (< 20)
+        $stok_kritis_query = mysqli_query($this->conn, "SELECT * FROM products WHERE stok < 20");
+        while ($row = mysqli_fetch_assoc($stok_kritis_query)) {
+            $this->stok_kritis_products[] = $row;
+        }
+
+        // 🔹 Coffee Beans Statistics (sumber data sama dengan admin/stock.php)
+        $beans_query = mysqli_query($this->conn, "SELECT * FROM coffee_beans WHERE stok > 0 ORDER BY nama_biji_kopi ASC");
+        while ($bean = mysqli_fetch_assoc($beans_query)) {
+            $this->coffee_beans[] = $bean;
+        }
+        
+        $this->total_biji_kopi = (float) (mysqli_fetch_assoc(mysqli_query($this->conn, 
+            "SELECT SUM(stok) as total FROM coffee_beans WHERE stok > 0"))['total'] ?? 0);
+
+        // 🔹 Beans Kritis (< 10 kg)
+        $beans_kritis_query = mysqli_query($this->conn, "SELECT * FROM coffee_beans WHERE stok < 10 AND stok > 0");
+        while ($bean = mysqli_fetch_assoc($beans_kritis_query)) {
+            $this->beans_kritis[] = $bean;
+        }
+
+        // 🔹 Total stok kritis (products + beans)
+        $this->stok_kritis_count = count($this->stok_kritis_products) + count($this->beans_kritis);
+
+        // 🔹 Sales per product (sama seperti admin)
+        $sales_query = mysqli_query($this->conn, "
+            SELECT p.nama_produk, SUM(td.quantity) as total_terjual, SUM(td.subtotal) as total_pendapatan
+            FROM transaction_details td
+            JOIN products p ON td.product_id = p.id
+            JOIN transactions t ON td.transaction_id = t.id
+            WHERE t.status_pembayaran IN ('lunas','dikonfirmasi')
+            GROUP BY p.id
+            ORDER BY total_terjual DESC
+        ");
+        
+        $this->sales_data = mysqli_fetch_all($sales_query, MYSQLI_ASSOC);
+        
+        // 🔹 Prepare chart data
+        $this->chart_labels = array_column($this->sales_data, 'nama_produk');
+        $this->chart_data = array_column($this->sales_data, 'total_terjual');
+    }
+
+    /**
+     * Helper: Get badge class based on stock level for products
+     */
+    public function getProductStockBadge(int $stok): string {
+        return $stok < 20 ? 'badge-danger' : 'badge-success';
+    }
+
+    /**
+     * Helper: Get badge class for coffee beans stock
+     */
+    public function getBeanStockBadge(float $stok): string {
+        return $stok < 10 ? 'stock-badge' : 'stock-badge success';
+    }
+
+    /**
+     * Helper: Format Rupiah
+     */
+    public function formatRupiah(float $amount): string {
+        return 'Rp ' . number_format($amount, 0, ',', '.');
+    }
+
+    /**
+     * Helper: Format number with 1 decimal for kg
+     */
+    public function formatKg(float $amount): string {
+        return number_format($amount, 1, ',', '.');
+    }
+
+    /**
+     * Helper: Get chart colors array (JSON encoded for JS)
+     */
+    public function getChartColorsJson(): string {
+        $colors = ['#2C1810', '#5D4037', '#A67C52', '#2E5D4F', '#A8D5BA', '#8D6E63', '#1B4D3E'];
+        return json_encode($colors);
+    }
+
+    /**
+     * Helper: Get chart labels JSON for JS
+     */
+    public function getChartLabelsJson(): string {
+        return json_encode($this->chart_labels);
+    }
+
+    /**
+     * Helper: Get chart data JSON for JS
+     */
+    public function getChartDataJson(): string {
+        return json_encode($this->chart_data);
+    }
+
+    /**
+     * Helper: Check if has sales data for chart
+     */
+    public function hasSalesData(): bool {
+        return !empty($this->sales_data);
+    }
+
+    /**
+     * Helper: Check if has coffee beans data
+     */
+    public function hasCoffeeBeans(): bool {
+        return !empty($this->coffee_beans);
+    }
+}
+
+// ✅ Inisialisasi Controller
+$manager = new ManagerDashboardController($conn);
 ?>
-
 <!DOCTYPE html>
 <html lang="id">
 
@@ -40,7 +163,6 @@ $sales_per_product = mysqli_query($conn, "
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/dashboard.css">
-    
 </head>
 <body>
     <!-- Top Header -->
@@ -102,9 +224,7 @@ $sales_per_product = mysqli_query($conn, "
         <div class="main-content">
             <!-- Page Header -->
             <div class="page-header">
-                <h1 class="page-title">
-                    <i class=></i>Dashboard Manager
-                </h1>
+                <h1 class="page-title">Dashboard Manager </h1>
             </div>
 
             <!-- Statistics Cards -->
@@ -112,29 +232,28 @@ $sales_per_product = mysqli_query($conn, "
                 <div class="stat-card">
                     <div class="stat-icon"><i class="fas fa-shopping-cart"></i></div>
                     <div class="stat-content">
-                        <div class="stat-number"><?= (int) $total_transaksi ?></div>
+                        <div class="stat-number"><?= $manager->total_transaksi ?></div>
                         <div class="stat-label">Total Transaksi</div>
                     </div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon"><i class="fas fa-rupiah-sign"></i></div>
                     <div class="stat-content">
-                        <div class="stat-number text-rupiah">Rp
-                            <?= number_format($total_pendapatan ?? 0, 0, ',', '.') ?></div>
+                        <div class="stat-number text-rupiah"><?= $manager->formatRupiah($manager->total_pendapatan) ?></div>
                         <div class="stat-label">Pendapatan</div>
                     </div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon"><i class="fas fa-boxes-stacked"></i></div>
                     <div class="stat-content">
-                        <div class="stat-number"><?= (int) $total_produk ?></div>
+                        <div class="stat-number"><?= $manager->total_produk ?></div>
                         <div class="stat-label">Stok Produk</div>
                     </div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon"><i class="fas fa-seedling"></i></div>
                     <div class="stat-content">
-                        <div class="stat-number"><?= number_format($total_biji_kopi ?? 0, 1) ?> kg</div>
+                        <div class="stat-number"><?= $manager->formatKg($manager->total_biji_kopi) ?> kg</div>
                         <div class="stat-label">Stok Biji Kopi</div>
                     </div>
                 </div>
@@ -142,7 +261,7 @@ $sales_per_product = mysqli_query($conn, "
                     <div class="stat-icon"><i class="fas fa-triangle-exclamation"></i></div>
                     <div class="stat-content">
                         <div class="stat-number" style="color: var(--danger-text);">
-                            <?= (mysqli_num_rows($stok_kritis) ?? 0) + (mysqli_num_rows($beans_kritis) ?? 0) ?>
+                            <?= $manager->stok_kritis_count ?>
                         </div>
                         <div class="stat-label">Stok Kritis</div>
                     </div>
@@ -155,7 +274,7 @@ $sales_per_product = mysqli_query($conn, "
                 <div class="col-lg-6 mb-4">
                     <div class="card-custom">
                         <div class="card-header-custom">
-                            <span><i class=></i> Penjualan per Produk</span>
+                            <span> Penjualan per Produk</span>
                         </div>
                         <div class="card-body">
                             <div class="chart-container">
@@ -170,17 +289,12 @@ $sales_per_product = mysqli_query($conn, "
                 <div class="col-lg-6 mb-4">
                     <div class="card-custom">
                         <div class="card-header-custom">
-                            <span><i class=></i> Stok Biji Kopi</span>
+                            <span>Stok Biji Kopi</span>
                         </div>
                         <div class="card-body">
-                            <?php if (mysqli_num_rows($coffee_beans) > 0): ?>
+                            <?php if ($manager->hasCoffeeBeans()): ?>
                                 <ul class="stock-list">
-                                    <?php
-                                    mysqli_data_seek($coffee_beans, 0);
-                                    while ($bean = mysqli_fetch_assoc($coffee_beans)):
-                                        $is_kritis = $bean['stok'] < 10;
-                                        $badge_class = $is_kritis ? 'stock-badge' : 'stock-badge success';
-                                        ?>
+                                    <?php foreach ($manager->coffee_beans as $bean): ?>
                                         <li class="stock-item">
                                             <div>
                                                 <span class="stock-name"><?= htmlspecialchars($bean['nama_biji_kopi']) ?></span>
@@ -192,12 +306,12 @@ $sales_per_product = mysqli_query($conn, "
                                                     </small>
                                                 <?php endif; ?>
                                             </div>
-                                            <span class="<?= $badge_class ?>">
+                                            <span class="<?= $manager->getBeanStockBadge($bean['stok']) ?>">
                                                 <i class="fas fa-circle" style="font-size: 5px;"></i>
-                                                <?= number_format($bean['stok'], 1) ?> kg
+                                                <?= $manager->formatKg($bean['stok']) ?> kg
                                             </span>
                                         </li>
-                                    <?php endwhile; ?>
+                                    <?php endforeach; ?>
                                 </ul>
                             <?php else: ?>
                                 <div class="empty-state">
@@ -213,7 +327,7 @@ $sales_per_product = mysqli_query($conn, "
             <!-- Sales Detail Table -->
             <div class="card-custom">
                 <div class="card-header-custom">
-                    <span><i class=></i> Detail Penjualan Produk</span>
+                    <span> Detail Penjualan Produk</span>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
@@ -226,13 +340,7 @@ $sales_per_product = mysqli_query($conn, "
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php
-                                mysqli_data_seek($sales_per_product, 0);
-                                $sales_data = mysqli_fetch_all($sales_per_product, MYSQLI_ASSOC);
-                                $counter = 0;
-
-                                if (empty($sales_data)):
-                                    ?>
+                                <?php if (empty($manager->sales_data)): ?>
                                     <tr>
                                         <td colspan="3" class="text-center py-4">
                                             <div class="empty-state">
@@ -242,16 +350,14 @@ $sales_per_product = mysqli_query($conn, "
                                         </td>
                                     </tr>
                                 <?php else: ?>
-                                    <?php foreach ($sales_data as $sales):
-                                        $counter++;
-                                        ?>
+                                    <?php foreach ($manager->sales_data as $sales): ?>
                                         <tr>
                                             <td data-label="Produk" class="fw-semibold">
                                                 <?= htmlspecialchars($sales['nama_produk']) ?>
                                             </td>
                                             <td data-label="Terjual"><?= (int) $sales['total_terjual'] ?> unit</td>
                                             <td data-label="Pendapatan" class="text-rupiah">
-                                                Rp <?= number_format($sales['total_pendapatan'], 0, ',', '.') ?>
+                                                <?= $manager->formatRupiah((float) $sales['total_pendapatan']) ?>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
@@ -300,10 +406,10 @@ $sales_per_product = mysqli_query($conn, "
         }
     });
 
-    // Chart data
-    const chartLabels = <?= json_encode(array_column($sales_data ?? [], 'nama_produk')) ?>;
-    const chartData = <?= json_encode(array_column($sales_data ?? [], 'total_terjual')) ?>;
-    const chartColors = ['#2C1810', '#5D4037', '#A67C52', '#2E5D4F', '#A8D5BA', '#8D6E63', '#1B4D3E'];
+    // Chart data from PHP via helpers
+    const chartLabels = <?= $manager->getChartLabelsJson() ?>;
+    const chartData = <?= $manager->getChartDataJson() ?>;
+    const chartColors = <?= $manager->getChartColorsJson() ?>;
 
     const ctx = document.getElementById('salesChart');
     if (ctx && chartLabels.length > 0) {
@@ -337,7 +443,7 @@ $sales_per_product = mysqli_query($conn, "
                             label: function (context) {
                                 const label = context.label || '';
                                 const value = context.parsed || 0;
-                                return `${label}: ${value} unit`;  // ✅ TANPA PERSEN
+                                return `${label}: ${value} unit`;
                             }
                         }
                     }
@@ -376,7 +482,5 @@ $sales_per_product = mysqli_query($conn, "
         });
     });
 </script>
-    
 </body>
-
 </html>

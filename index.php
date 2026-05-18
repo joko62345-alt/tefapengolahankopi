@@ -1,11 +1,5 @@
 <?php
-session_start();
-$host = "localhost";
-$user = "root";
-$pass = "";
-$db   = "tefa_coffee";
-
-$conn = @mysqli_connect($host, $user, $pass, $db);
+require_once 'config/config.php';
 
 // Ambil produk
 $products = [];

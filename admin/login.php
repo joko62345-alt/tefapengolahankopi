@@ -60,7 +60,7 @@ class StaffLogin {
             
             $this->authenticateUser($user, $password);
         } else {
-            $this->error = 'Username tidak ditemukan!';
+            $this->error = 'Username salah!';
         }
     }
     
@@ -133,9 +133,6 @@ class StaffLogin {
     }
 }
 
-// ============================================
-// INISIALISASI & EKSEKUSI
-// ============================================
 $staffLogin = new StaffLogin($conn);
 $staffLogin->handleAuthenticatedUser();
 $staffLogin->processLogin();
@@ -194,16 +191,12 @@ $error = $staffLogin->getError();
                     </div>
                 </div>
 
-                <button type="submit" class="btn-login">
-                    <i class="fas fa-sign-in-alt"></i>
-                    Masuk Sistem
+                <button type="submit" class="btn-login"> Masuk 
                 </button>
             </form>
 
             <div class="back-link">
-                <a href="../index.php">
-                    <i class="fas fa-arrow-left"></i>
-                    Lihat Website TEFA Coffee
+                <a href="../index.php"> Lihat Website TEFA Coffee
                 </a>
             </div>
         </div>
@@ -218,7 +211,7 @@ $error = $staffLogin->getError();
 
             <div class="welcome-content">
                 <div>
-                    <i class="fas fa-coffee"></i>
+                    
                 </div>
                 <h2 class="welcome-title">SELAMAT DATANG</h2>
                 <p class="welcome-text">
