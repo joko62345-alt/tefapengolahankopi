@@ -1,0 +1,23 @@
+name: Deploy Website to InfinityFree
+
+on:
+  push:
+    branches:
+      - main # Ubah ke 'master' jika branch utama kamu masih menggunakan nama master
+
+jobs:
+  web-deploy:
+    name: Deploy via FTP
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 🚚 Get latest code
+        uses: actions/checkout@v4
+
+      - name: 🚀 Sync files to InfinityFree
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: htdocs/ # Folder utama tempat file website diletakkan di InfinityFree
