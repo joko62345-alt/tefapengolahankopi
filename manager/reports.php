@@ -495,8 +495,24 @@ require_once '../config/config.php';
 checkRole('manager');
 
 $printMode = isset($_GET['print']) && $_GET['print'] === '1';
-$startDate = $_GET['start'] ?? date('Y-m-01');
-$endDate = $_GET['end'] ?? date('Y-m-d');
+
+// ✅ VALIDASI TANGGAL - TAMBAHAN FIX
+function validateDate($date, $default) {
+    if (empty($date) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+        return $default;
+    }
+    $timestamp = strtotime($date);
+    return $timestamp ? $date : $default;
+}
+
+$startDate = validateDate($_GET['start'] ?? '', date('Y-m-01'));
+$endDate = validateDate($_GET['end'] ?? '', date('Y-m-d'));
+
+// Pastikan end >= start
+if (strtotime($endDate) < strtotime($startDate)) {
+    $endDate = $startDate;
+}
+
 $reportType = $_GET['type'] ?? 'sales';
 
 if (!ReportFactory::isValidType($reportType)) $reportType = 'sales';
@@ -598,11 +614,33 @@ if ($printMode): ?>
         </div>
 
         <?php if(!in_array($reportType,['inventory','beans_history'])): ?>
+        <!-- ✅ FILTER CARD DIPERBAIKI: Tambah onchange + tombol submit -->
         <div class="filter-card no-print">
-            <form method="GET" class="row g-3">
+            <form method="GET" class="row g-3" id="dateFilterForm">
                 <input type="hidden" name="type" value="<?= htmlspecialchars($reportType) ?>">
-                <div class="col-md-4"><label class="form-label">Tanggal Mulai</label><input type="date" name="start" value="<?= htmlspecialchars($startDate) ?>" class="form-control"></div>
-                <div class="col-md-4"><label class="form-label">Tanggal Akhir</label><input type="date" name="end" value="<?= htmlspecialchars($endDate) ?>" class="form-control"></div>
+                <div class="col-md-4">
+                    <label class="form-label">Tanggal Mulai</label>
+                    <input type="date" name="start" 
+                           value="<?= htmlspecialchars($startDate) ?>" 
+                           class="form-control"
+                           id="startDate"
+                           onchange="this.form.submit()"
+                           max="<?= date('Y-m-d') ?>">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Tanggal Akhir</label>
+                    <input type="date" name="end" 
+                           value="<?= htmlspecialchars($endDate) ?>" 
+                           class="form-control"
+                           id="endDate"
+                           onchange="this.form.submit()"
+                           max="<?= date('Y-m-d') ?>">
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-custom btn-coffee w-100" style="display:none;">
+                        <i class="fas fa-filter"></i> Filter
+                    </button>
+                </div>
             </form>
         </div>
         <?php endif; ?>
@@ -698,11 +736,10 @@ if ($printMode): ?>
        function openPrintReport(){
     const params = new URLSearchParams();
     params.append('type', '<?= $reportType ?>');
-    params.append('print', '1');  // Aktifkan print mode
+    params.append('print', '1');
     params.append('start', '<?= $startDate ?>');
     params.append('end', '<?= $endDate ?>');
     
-    // Tambahkan filter beans_history jika ada
     <?php if($reportType === 'beans_history'): ?>
     const bean = document.querySelector('select[name="filter_bean"]')?.value || '';
     const jenis = document.querySelector('select[name="filter_bean_jenis"]')?.value || '';
@@ -714,7 +751,6 @@ if ($printMode): ?>
     if(dateTo) params.append('filter_bean_date_to', dateTo);
     <?php endif; ?>
     
-    // Tambahkan filter inventory jika ada
     <?php if($reportType === 'inventory'): ?>
     const invKategori = document.querySelector('select[name="inv_kategori"]')?.value || '';
     const invKondisi = document.querySelector('select[name="inv_kondisi"]')?.value || '';
@@ -722,7 +758,6 @@ if ($printMode): ?>
     if(invKondisi) params.append('inv_kondisi', invKondisi);
     <?php endif; ?>
     
-    // ✨ BUKA DI JENDELA BARU (bukan redirect)
     const printUrl = 'reports.php?' + params.toString();
     const printWindow = window.open(printUrl, '_blank', 'width=1000,height=800,scrollbars=yes');
     
@@ -732,6 +767,35 @@ if ($printMode): ?>
         alert(' Popup diblokir browser! Izinkan popup untuk situs ini agar dapat mencetak laporan.');
     }
 }
+
+// ✅ TAMBAHAN: Validasi tanggal sebelum submit untuk filter sales/stock
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('dateFilterForm');
+    const startInput = document.getElementById('startDate');
+    const endInput = document.getElementById('endDate');
+    
+    if (form && startInput && endInput) {
+        // Validasi: end tidak boleh sebelum start
+        [startInput, endInput].forEach(input => {
+            input.addEventListener('change', function() {
+                if (startInput.value && endInput.value && endInput.value < startInput.value) {
+                    alert('Tanggal akhir tidak boleh sebelum tanggal mulai');
+                    endInput.value = startInput.value;
+                    return;
+                }
+                // Form akan auto-submit via onchange attribute
+            });
+        });
+        
+        form.addEventListener('submit', function(e) {
+            if (startInput.value && endInput.value && endInput.value < startInput.value) {
+                e.preventDefault();
+                alert('Tanggal akhir tidak boleh sebelum tanggal mulai');
+                endInput.focus();
+            }
+        });
+    }
+});
     </script>
 </body>
 </html>
