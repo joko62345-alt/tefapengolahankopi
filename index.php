@@ -55,10 +55,10 @@ function isCustomerLoggedIn() {
         <!-- Navbar Content -->
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto align-items-center">
-                <li class="nav-item"><a class="nav-link" href="#home">Beranda</a></li>
-                <li class="nav-item"><a class="nav-link" href="#products">Produk</a></li>
-                <li class="nav-item"><a class="nav-link" href="#features">Keunggulan</a></li>
-                <li class="nav-item"><a class="nav-link" href="#about">Tentang</a></li>
+                <li class="nav-item"><a class="nav-link" href="index.php#home">Beranda</a></li>
+                <li class="nav-item"><a class="nav-link" href="index.php#products">Produk</a></li>
+                <li class="nav-item"><a class="nav-link" href="index.php#features">Keunggulan</a></li>
+                <li class="nav-item"><a class="nav-link" href="index.php#about">Tentang</a></li>
                 
                 <?php if(isCustomerLoggedIn()): ?>
                     <!-- User sudah login -->
@@ -100,7 +100,7 @@ function isCustomerLoggedIn() {
                     Nikmati kopi istimewa dalam suasana yang nyaman dan mengundang.
                 </p>
                 <div class="d-flex gap-3 flex-wrap">
-                    <a href="#products" class="btn btn-gold btn-lg">
+                    <a href="index.php#products" class="btn btn-gold btn-lg">
                         <i class="fas fa-shopping-bag me-2"></i>Lihat Produk
                     </a>
                 </div>
@@ -240,7 +240,7 @@ function isCustomerLoggedIn() {
     </div>
 </section>
 
-<!--  FOOTER -->
+<!--  FOOTER - PERBAIKAN LINK -->
 <footer class="footer">
     <div class="container">
         <div class="row g-4">
@@ -250,19 +250,19 @@ function isCustomerLoggedIn() {
                 </div>
                 <p class="footer-desc">Menyajikan kopi premium terbaik untuk menemani setiap momen spesial Anda. Kualitas, rasa, dan kepuasan pelanggan adalah prioritas kami.</p>
                 <div class="social-links">
-                    <a href="#" class="social-link" data-bs-toggle="tooltip" title="Instagram"><i class="fab fa-instagram"></i></a>
-                    <a href="#" class="social-link" data-bs-toggle="tooltip" title="Facebook"><i class="fab fa-facebook-f"></i></a>
-                    <a href="#" class="social-link" data-bs-toggle="tooltip" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
-                    <a href="#" class="social-link" data-bs-toggle="tooltip" title="TikTok"><i class="fab fa-tiktok"></i></a>
+                    <a href="https://instagram.com/tefacoffee_polije" class="social-link" target="_blank" rel="noopener noreferrer" data-bs-toggle="tooltip" title="Instagram"><i class="fab fa-instagram"></i></a>
+                    <a href="https://facebook.com/tefacoffee.polije" class="social-link" target="_blank" rel="noopener noreferrer" data-bs-toggle="tooltip" title="Facebook"><i class="fab fa-facebook-f"></i></a>
+                    <a href="https://wa.me/6281234567890" class="social-link" target="_blank" rel="noopener noreferrer" data-bs-toggle="tooltip" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                    <a href="https://tiktok.com/@tefacoffee_polije" class="social-link" target="_blank" rel="noopener noreferrer" data-bs-toggle="tooltip" title="TikTok"><i class="fab fa-tiktok"></i></a>
                 </div>
             </div>
             <div class="col-lg-2 col-md-6">
                 <h5 class="footer-title">Navigasi</h5>
                 <ul class="footer-links">
-                    <li><a href="#home"><i class="fas fa-chevron-right me-1 small"></i>Beranda</a></li>
-                    <li><a href="#products"><i class="fas fa-chevron-right me-1 small"></i>Produk</a></li>
-                    <li><a href="#features"><i class="fas fa-chevron-right me-1 small"></i>Keunggulan</a></li>
-                    <li><a href="#about"><i class="fas fa-chevron-right me-1 small"></i>Tentang</a></li>
+                    <li><a href="index.php#home"><i class="fas fa-chevron-right me-1 small"></i>Beranda</a></li>
+                    <li><a href="index.php#products"><i class="fas fa-chevron-right me-1 small"></i>Produk</a></li>
+                    <li><a href="index.php#features"><i class="fas fa-chevron-right me-1 small"></i>Keunggulan</a></li>
+                    <li><a href="index.php#about"><i class="fas fa-chevron-right me-1 small"></i>Tentang</a></li>
                 </ul>
             </div>
             <div class="col-lg-3 col-md-6">
@@ -280,9 +280,24 @@ function isCustomerLoggedIn() {
             <div class="col-lg-3 col-md-6">
                 <h5 class="footer-title">Kontak Kami</h5>
                 <ul class="footer-links footer-contact">
-                    <li><i class="fas fa-map-marker-alt mt-1"></i><span>Jl. Mastrip, Kotak Pos 164, Jember 68101, Jawa Timur, Indonesia.</span></li>
-                    <li><i class="fas fa-phone mt-1"></i><span>0812-3456-7890</span></li>
-                    <li><i class="fas fa-envelope mt-1"></i><span>tefacofesip@polije.ac.id</span></li>
+                    <li>
+                        <a href="https://maps.google.com/?q=Politeknik+Negeri+Jember,+Jl.+Mastrip,+Jember" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-map-marker-alt mt-1"></i>
+                            <span>Jl. Mastrip, Kotak Pos 164, Jember 68101, Jawa Timur, Indonesia.</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="tel:+6281234567890" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-phone mt-1"></i>
+                            <span>0812-3456-7890</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="mailto:tefacofesip@polije.ac.id" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-envelope mt-1"></i>
+                            <span>tefacofesip@polije.ac.id</span>
+                        </a>
+                    </li>
                     <li><i class="fas fa-clock mt-1"></i><span>Senin-Minggu: 08.00-20.00</span></li>
                 </ul>
             </div>
@@ -292,7 +307,17 @@ function isCustomerLoggedIn() {
         </div>
     </div>
 </footer>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="assets/js/customer.js"></script>
+<script>
+    // Initialize Bootstrap tooltips
+    document.addEventListener('DOMContentLoaded', function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        })
+    });
+</script>
 </body>
 </html>
