@@ -174,13 +174,18 @@ $error = $staffLogin->getError();
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Password</label>
-                    <div class="input-wrapper">
-                        <input type="password" name="password" id="password" class="form-control" required
-                            placeholder="••••••••" autocomplete="current-password">
-                        <i class="fas fa-lock"></i>
-                    </div>
-                </div>
+    <label class="form-label">Password</label>
+    <div class="input-wrapper">
+        <input type="password" name="password" id="password" 
+               class="form-control" required
+               placeholder="••••••••" 
+               autocomplete="current-password">
+        <i class="fas fa-lock"></i>
+        <button type="button" class="password-toggle" id="togglePassword">
+            <i class="fas fa-eye"></i>
+        </button>
+    </div>
+</div>
 
                 <button type="submit" class="btn-login"> Masuk 
                 </button>
@@ -214,31 +219,53 @@ $error = $staffLogin->getError();
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Form validation
-        document.getElementById('loginForm')?.addEventListener('submit', function (e) {
-            const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value;
+        
+    // Toggle Password Visibility
+    document.getElementById('togglePassword')?.addEventListener('click', function () {
+        const passwordInput = document.getElementById('password');
+        const icon = this.querySelector('i');
+        
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            passwordInput.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+        
+        // Fokus kembali ke input password setelah toggle
+        passwordInput.focus();
+    });
 
-            if (!username || !password) {
-                e.preventDefault();
-                document.querySelector('.login-left').style.animation = 'shake 0.5s ease';
-                setTimeout(() => {
-                    document.querySelector('.login-left').style.animation = '';
-                }, 500);
-            }
-        });
+    // Form validation dengan shake animation
+    document.getElementById('loginForm')?.addEventListener('submit', function (e) {
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value;
 
-        // Add shake animation
-        const style = document.createElement('style');
-        style.textContent = `
+        if (!username || !password) {
+            e.preventDefault();
+            const loginLeft = document.querySelector('.login-left');
+            loginLeft.style.animation = 'shake 0.5s ease';
+            setTimeout(() => {
+                loginLeft.style.animation = '';
+            }, 500);
+        }
+    });
+
+    // Add shake animation
+    const style = document.createElement('style');
+    style.textContent = `
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
             25% { transform: translateX(-10px); }
             75% { transform: translateX(10px); }
         }
-        `;
-        document.head.appendChild(style);
-    </script>
+    `;
+    document.head.appendChild(style);
+</script>
+        
 </body>
 
 </html>

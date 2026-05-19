@@ -115,31 +115,49 @@
             font-size: 0.85rem;
         }
 
-        /* Password Toggle - Compact */
-        .password-wrapper {
-            position: relative;
-        }
+    /* Password Toggle */
+.password-wrapper {
+    position: relative;
+}
 
-        .password-toggle {
-            position: absolute;
-            right: 8px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            color: var(--c-muted);
-            cursor: pointer;
-            padding: 0.25rem;
-            border-radius: 6px;
-            transition: var(--transition);
-            font-size: 0.85rem;
-        }
+.password-wrapper .form-control {
+    padding-right: 42px !important;
+}
 
-        .password-toggle:hover {
-            color: var(--c-primary);
-            background: rgba(166, 124, 82, 0.08);
-        }
+.password-toggle {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--c-muted);
+    cursor: pointer;
+    padding: 0.25rem 0.4rem;
+    border-radius: 6px;
+    transition: var(--transition);
+    font-size: 0.85rem;
+    z-index: 10;
+    line-height: 1;
+}
 
+.password-toggle:hover {
+    color: var(--c-primary);
+    background: rgba(166, 124, 82, 0.08);
+}
+
+/* Matikan icon validasi Bootstrap agar tidak bertumpuk dengan icon mata */
+.password-wrapper input[type="password"].form-control,
+.password-wrapper input[type="text"].form-control,
+.was-validated .password-wrapper input[type="password"].form-control:invalid,
+.was-validated .password-wrapper input[type="password"].form-control:valid,
+.was-validated .password-wrapper input[type="text"].form-control:invalid,
+.was-validated .password-wrapper input[type="text"].form-control:valid,
+.password-wrapper .form-control.is-invalid,
+.password-wrapper .form-control.is-valid {
+    background-image: none !important;
+    padding-right: 42px !important;
+}
         /* Form Options - Compact */
         .form-options {
             display: flex;

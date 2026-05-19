@@ -94,13 +94,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         <i class="fas fa-lock me-1"></i>Password
                     </label>
                     <div class="password-wrapper">
-                        <input type="password" id="password" name="password" class="form-control"
-                            placeholder="Masukkan Password Anda" required autocomplete="current-password">
-                        <button type="button" class="password-toggle" id="togglePassword" title="Lihat password"
-                            aria-label="Toggle password visibility">
-                            <i class=""></i>
-                        </button>
-                    </div>
+    <input type="password" id="password" name="password" class="form-control"
+        placeholder="Masukkan Password Anda" required autocomplete="current-password">
+    <button type="button" class="password-toggle" id="togglePassword" title="Lihat password"
+        aria-label="Toggle password visibility">
+        <i class="fas fa-eye"></i>
+    </button>
+</div>
                 </div>
                 <button type="submit" class="btn-login"> Login
                 </button>

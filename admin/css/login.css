@@ -1,463 +1,500 @@
+:root {
+    --coffee-dark: #2C1810;
+    --coffee-deep: #3E2723;
+    --coffee-medium: #5D4037;
+    --coffee-accent: #8D6E63;
+    --coffee-gold: #B8956A;
+    --coffee-gold-light: #C9A961;
+    --coffee-cream: #F5E9D7;
+    --coffee-cream-light: #FFF9F0;
+    --leaf-dark: #1B4D3E;
+    --leaf-medium: #2E5D4F;
+    --leaf-light: #5A8A74;
+    --leaf-pale: #D4E8D9;
+    --text-primary: #1a1a1a;
+    --text-secondary: #4a4a4a;
+    --text-muted: #6b7280;
+    --text-white: #ffffff;
+}
 
-        :root {
-            --coffee-dark: #2C1810;
-            --coffee-deep: #3E2723;
-            --coffee-medium: #5D4037;
-            --coffee-accent: #8D6E63;
-            --coffee-gold: #B8956A;
-            --coffee-gold-light: #C9A961;
-            --coffee-cream: #F5E9D7;
-            --coffee-cream-light: #FFF9F0;
-            --leaf-dark: #1B4D3E;
-            --leaf-medium: #2E5D4F;
-            --leaf-light: #5A8A74;
-            --leaf-pale: #D4E8D9;
-            --text-primary: #1a1a1a;
-            --text-secondary: #4a4a4a;
-            --text-muted: #6b7280;
-            --text-white: #ffffff;
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
 
-        }
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--gradient-cream);
+    -webkit-font-smoothing: antialiased;
+    padding: 20px;
+}
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+/* ========== SPLIT SCREEN CONTAINER ========== */
+.login-container {
+    width: 100%;
+    max-width: 1200px;
+    min-height: 650px;
+    display: flex;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 25px 80px rgba(44, 24, 16, 0.25);
+    background: white;
+}
 
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: var(--gradient-cream);
-            -webkit-font-smoothing: antialiased;
-            padding: 20px;
-        }
+/* ========== LEFT SIDE - LOGIN FORM ========== */
+.login-left {
+    flex: 1;
+    padding: 3.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background: white;
+    position: relative;
+}
 
-        /* ========== SPLIT SCREEN CONTAINER ========== */
-        .login-container {
-            width: 100%;
-            max-width: 1200px;
-            min-height: 650px;
-            display: flex;
-            border-radius: 24px;
-            overflow: hidden;
-            box-shadow: 0 25px 80px rgba(44, 24, 16, 0.25);
-            background: white;
-        }
+.login-header {
+    margin-bottom: 2.5rem;
+    text-align: center;
+}
 
-        /* ========== LEFT SIDE - LOGIN FORM ========== */
-        .login-left {
-            flex: 1;
-            padding: 3.5rem;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            background: white;
-            position: relative;
-        }
+.login-title {
+    font-size: 1.85rem;
+    font-weight: 700;
+    color: var(--coffee-dark);
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.5px;
+}
 
-        .login-header {
-            margin-bottom: 2.5rem;
-            text-align: center;
-        }
+.login-subtitle {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+}
 
-        .login-title {
-            font-size: 1.85rem;
-            font-weight: 700;
-            color: var(--coffee-dark);
-            margin-bottom: 0.5rem;
-            letter-spacing: -0.5px;
-        }
+/* ========== FORM STYLES ========== */
+.form-group {
+    margin-bottom: 1.5rem;
+}
 
-        .login-subtitle {
-            color: var(--text-muted);
-            font-size: 0.95rem;
-        }
+.form-label {
+    display: block;
+    font-weight: 600;
+    color: var(--coffee-medium);
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
 
-        /* Form Styles */
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
+/* ========== INPUT WRAPPER ========== */
+.input-wrapper {
+    position: relative;
+}
 
-        .form-label {
-            display: block;
-            font-weight: 600;
-            color: var(--coffee-medium);
-            font-size: 0.9rem;
-            margin-bottom: 0.5rem;
-        }
+/* Icon kiri (user/lock) — hanya child langsung */
+.input-wrapper > i {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--coffee-gold);
+    font-size: 1rem;
+    pointer-events: none;
+    transition: color 0.2s;
+    z-index: 1;
+}
 
-        .input-wrapper {
-            position: relative;
-        }
+/* Focus: ubah warna icon kiri */
+.input-wrapper:focus-within > i {
+    color: var(--leaf-dark);
+}
 
-        .input-wrapper i {
-            position: absolute;
-            left: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--coffee-gold);
-            font-size: 1rem;
-            pointer-events: none;
-            transition: color 0.2s;
-        }
+/* ========== PASSWORD TOGGLE ========== */
+.input-wrapper .password-toggle {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--coffee-accent);
+    cursor: pointer;
+    padding: 0.25rem 0.4rem;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    z-index: 10;
+    line-height: 1;
+    width: auto;
+    height: auto;
+    transition: color 0.2s;
+}
 
-        .form-control {
-            width: 100%;
-            padding: 0.875rem 1rem 0.875rem 2.75rem;
-            border: 2px solid #e8e4dc;
-            border-radius: 12px;
-            font-size: 0.95rem;
-            color: var(--text-primary);
-            background: #faf8f5;
-            transition: all 0.2s ease;
-        }
+.input-wrapper .password-toggle:hover {
+    color: var(--coffee-dark);
+    background: rgba(184, 149, 106, 0.1);
+}
 
-        .form-control:focus {
-            outline: none;
-            border-color: var(--coffee-gold);
-            background: white;
-            box-shadow: 0 0 0 4px rgba(184, 149, 106, 0.15);
-        }
+/* Override .input-wrapper > i yang diwariskan ke icon di dalam toggle button */
+.input-wrapper .password-toggle i {
+    position: static !important;
+    transform: none !important;
+    left: auto !important;
+    top: auto !important;
+    pointer-events: none;
+    color: inherit !important;
+    font-size: inherit !important;
+    z-index: auto;
+}
 
-        .input-wrapper:focus-within i {
-            color: var(--leaf-dark);
-        }
+/* Ruang kanan agar teks tidak tertutup icon mata */
+.input-wrapper:has(.password-toggle) .form-control {
+    padding-right: 42px;
+}
 
-        .form-control::placeholder {
-            color: #a89f91;
-        }
+/* Matikan icon validasi Bootstrap agar tidak bertumpuk dengan icon mata */
+.input-wrapper input[type="password"].form-control,
+.input-wrapper input[type="text"].form-control {
+    background-image: none !important;
+}
 
-        /* Remember & Forgot */
-        .form-options {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-            font-size: 0.875rem;
-        }
+/* ========== FORM CONTROL ========== */
+.form-control {
+    width: 100%;
+    padding: 0.875rem 1rem 0.875rem 2.75rem;
+    border: 2px solid #e8e4dc;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    background: #faf8f5;
+    transition: all 0.2s ease;
+}
 
-        .remember-me {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: var(--text-secondary);
-            cursor: pointer;
-        }
+.form-control:focus {
+    outline: none;
+    border-color: var(--coffee-gold);
+    background: white;
+    box-shadow: 0 0 0 4px rgba(184, 149, 106, 0.15);
+}
 
-        .remember-me input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-            accent-color: var(--leaf-dark);
-        }
+.form-control::placeholder {
+    color: #a89f91;
+}
 
-        .forgot-password {
-            color: var(--coffee-gold);
-            text-decoration: none;
-            font-weight: 500;
-            transition: color 0.2s;
-        }
+/* ========== FORM OPTIONS ========== */
+.form-options {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    font-size: 0.875rem;
+}
 
-        .forgot-password:hover {
-            color: var(--leaf-dark);
-            text-decoration: underline;
-        }
+.remember-me {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
 
-        /* Login Button - SATU WARNA SOLID */
-        .btn-login {
-            width: 100%;
-            padding: 1rem;
-            background: var(--coffee-dark);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            box-shadow: 0 4px 15px rgba(44, 24, 16, 0.3);
-        }
+.remember-me input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--leaf-dark);
+}
 
-        .btn-login:hover {
-            background: var(--coffee-deep);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(44, 24, 16, 0.4);
-        }
+.forgot-password {
+    color: var(--coffee-gold);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+}
 
-        .btn-login:active {
-            transform: translateY(0);
-        }
+.forgot-password:hover {
+    color: var(--leaf-dark);
+    text-decoration: underline;
+}
 
-        /* Alert */
-        .alert-custom {
-            border: none;
-            border-radius: 10px;
-            padding: 0.875rem 1.25rem;
-            font-size: 0.9rem;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-bottom: 1.5rem;
-            animation: slideDown 0.3s ease;
-        }
+/* ========== LOGIN BUTTON ========== */
+.btn-login {
+    width: 100%;
+    padding: 1rem;
+    background: var(--coffee-dark);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    box-shadow: 0 4px 15px rgba(44, 24, 16, 0.3);
+}
 
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
+.btn-login:hover {
+    background: var(--coffee-deep);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(44, 24, 16, 0.4);
+}
 
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
+.btn-login:active {
+    transform: translateY(0);
+}
 
-        .alert-danger {
-            background: #fee2e2;
-            color: #991b1b;
-            border-left: 4px solid #fca5a5;
-        }
+/* ========== ALERT ========== */
+.alert-custom {
+    border: none;
+    border-radius: 10px;
+    padding: 0.875rem 1.25rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    animation: slideDown 0.3s ease;
+}
 
-        /* ========== RIGHT SIDE - WELCOME SECTION WITH CIRCLES ========== */
-        .login-right {
-            flex: 1;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 3rem;
-            overflow: hidden;
-            color: white;
-            background: var(--gradient-coffee);
-        }
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
 
-        /* Background Image - FOTO KOPI ANDA */
-        .login-right::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: url('../../assets/images/kop.jpg') center/cover;
-            z-index: 0;
-        }
+.alert-danger {
+    background: #fee2e2;
+    color: #991b1b;
+    border-left: 4px solid #fca5a5;
+}
 
-        /* Dark Overlay untuk keterbacaan text */
-        .login-right::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(44, 24, 16, 0.6);
-            z-index: 1;
-        }
+/* ========== RIGHT SIDE ========== */
+.login-right {
+    flex: 1;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 3rem;
+    overflow: hidden;
+    color: white;
+    background: var(--gradient-coffee);
+}
 
-        /* Decorative Circles - Seperti gambar referensi */
-        .circle {
-            position: absolute;
-            border-radius: 50%;
-            background: rgba(245, 233, 215, 0.15);
-            backdrop-filter: blur(5px);
-            z-index: 2;
-        }
+.login-right::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('../../assets/images/kop.jpg') center/cover;
+    z-index: 0;
+}
 
-        .circle-1 {
-            width: 250px;
-            height: 250px;
-            top: -80px;
-            right: -60px;
-            background: rgba(184, 149, 106, 0.2);
-        }
+.login-right::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(44, 24, 16, 0.6);
+    z-index: 1;
+}
 
-        .circle-2 {
-            width: 180px;
-            height: 180px;
-            bottom: 40px;
-            left: -50px;
-            background: rgba(90, 138, 116, 0.25);
-        }
+/* ========== DECORATIVE CIRCLES ========== */
+.circle {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(245, 233, 215, 0.15);
+    backdrop-filter: blur(5px);
+    z-index: 2;
+}
 
-        .circle-3 {
-            width: 120px;
-            height: 120px;
-            bottom: -40px;
-            right: 80px;
-            background: rgba(212, 165, 116, 0.2);
-        }
+.circle-1 {
+    width: 250px;
+    height: 250px;
+    top: -80px;
+    right: -60px;
+    background: rgba(184, 149, 106, 0.2);
+    animation: float 6s ease-in-out infinite;
+}
 
-        .circle-4 {
-            width: 80px;
-            height: 80px;
-            top: 120px;
-            left: 40px;
-            background: rgba(184, 149, 106, 0.15);
-        }
+.circle-2 {
+    width: 180px;
+    height: 180px;
+    bottom: 40px;
+    left: -50px;
+    background: rgba(90, 138, 116, 0.25);
+    animation: float 7s ease-in-out infinite 1s;
+}
 
-        .welcome-content {
-            text-align: center;
-            z-index: 3;
-            position: relative;
-            max-width: 420px;
-        }
+.circle-3 {
+    width: 120px;
+    height: 120px;
+    bottom: -40px;
+    right: 80px;
+    background: rgba(212, 165, 116, 0.2);
+    animation: float 5s ease-in-out infinite 0.5s;
+}
 
-        .welcome-icon {
-            width: 100px;
-            height: 100px;
-            background: rgba(245, 233, 215, 0.25);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 1.5rem;
-            border: 2px solid rgba(245, 233, 215, 0.4);
-            backdrop-filter: blur(10px);
-        }
+.circle-4 {
+    width: 80px;
+    height: 80px;
+    top: 120px;
+    left: 40px;
+    background: rgba(184, 149, 106, 0.15);
+    animation: float 8s ease-in-out infinite 1.5s;
+}
 
-        .welcome-icon i {
-            font-size: 3rem;
-            color: var(--coffee-cream);
-        }
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-15px); }
+}
 
-        .welcome-title {
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin-bottom: 0.75rem;
-            color: var(--coffee-cream);
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-            letter-spacing: 1px;
-        }
+/* ========== WELCOME CONTENT ========== */
+.welcome-content {
+    text-align: center;
+    z-index: 3;
+    position: relative;
+    max-width: 420px;
+}
 
-        .welcome-subtitle {
-            font-size: 1.1rem;
-            margin-bottom: 1.5rem;
-            color: var(--coffee-cream-light);
-            font-weight: 500;
-            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
-        }
+.welcome-icon {
+    width: 100px;
+    height: 100px;
+    background: rgba(245, 233, 215, 0.25);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    border: 2px solid rgba(245, 233, 215, 0.4);
+    backdrop-filter: blur(10px);
+}
 
-        .welcome-text {
-            font-size: 0.95rem;
-            margin-bottom: 2rem;
-            line-height: 1.8;
-            color: rgba(245, 233, 215, 0.9);
-            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
-        }
+.welcome-icon i {
+    font-size: 3rem;
+    color: var(--coffee-cream);
+}
 
-        .role-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            background: rgba(184, 149, 106, 0.35);
-            padding: 0.75rem 1.5rem;
-            border-radius: 25px;
-            font-weight: 600;
-            border: 2px solid rgba(245, 233, 215, 0.4);
-            color: var(--coffee-cream);
-            margin-top: 0.5rem;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        }
+.welcome-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    color: var(--coffee-cream);
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    letter-spacing: 1px;
+}
 
-        .role-badge i {
-            font-size: 1.1rem;
-        }
+.welcome-subtitle {
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+    color: var(--coffee-cream-light);
+    font-weight: 500;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
 
+.welcome-text {
+    font-size: 0.95rem;
+    margin-bottom: 2rem;
+    line-height: 1.8;
+    color: rgba(245, 233, 215, 0.9);
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
 
+.role-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(184, 149, 106, 0.35);
+    padding: 0.75rem 1.5rem;
+    border-radius: 25px;
+    font-weight: 600;
+    border: 2px solid rgba(245, 233, 215, 0.4);
+    color: var(--coffee-cream);
+    margin-top: 0.5rem;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
 
-        /* ========== RESPONSIVE ========== */
-        @media (max-width: 992px) {
-            .login-right {
-                display: none;
-            }
+.role-badge i {
+    font-size: 1.1rem;
+}
 
-            .login-left {
-                padding: 2.5rem;
-            }
-        }
+/* ========== BACK LINK ========== */
+.back-link {
+    margin-top: 2rem;
+    text-align: center;
+}
 
-        @media (max-width: 480px) {
-            .login-container {
-                border-radius: 16px;
-                min-height: auto;
-            }
+.back-link a {
+    color: var(--coffee-medium);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+}
 
-            .login-left {
-                padding: 2rem 1.5rem;
-            }
+.back-link a:hover {
+    color: var(--leaf-dark);
+    background: var(--coffee-cream-light);
+}
 
-            .login-title {
-                font-size: 1.5rem;
-            }
+/* ========== RESPONSIVE ========== */
+@media (max-width: 992px) {
+    .login-right {
+        display: none;
+    }
 
-            body {
-                padding: 10px;
-            }
-        }
+    .login-left {
+        padding: 2.5rem;
+    }
+}
 
-        /* Back Link */
-        .back-link {
-            margin-top: 2rem;
-            text-align: center;
-        }
+@media (max-width: 480px) {
+    .login-container {
+        border-radius: 16px;
+        min-height: auto;
+    }
 
-        .back-link a {
-            color: var(--coffee-medium);
-            text-decoration: none;
-            font-size: 0.9rem;
-            font-weight: 500;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: all 0.2s;
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-        }
+    .login-left {
+        padding: 2rem 1.5rem;
+    }
 
-        .back-link a:hover {
-            color: var(--leaf-dark);
-            background: var(--coffee-cream-light);
-        }
+    .login-title {
+        font-size: 1.5rem;
+    }
 
-        /* Animation untuk circles */
-        @keyframes float {
+    body {
+        padding: 10px;
+    }
+}
 
-            0%,
-            100% {
-                transform: translateY(0px);
-            }
+/* ========== HIGH CONTRAST ========== */
+@media (prefers-contrast: high) {
+    .login-container {
+        border: 2px solid var(--coffee-dark);
+    }
 
-            50% {
-                transform: translateY(-15px);
-            }
-        }
-
-        .circle-1 {
-            animation: float 6s ease-in-out infinite;
-        }
-
-        .circle-2 {
-            animation: float 7s ease-in-out infinite 1s;
-        }
-
-        .circle-3 {
-            animation: float 5s ease-in-out infinite 0.5s;
-        }
-
-        .circle-4 {
-            animation: float 8s ease-in-out infinite 1.5s;
-        }
-  
+    .form-control {
+        border-width: 2px;
+    }
+}

@@ -134,25 +134,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 </div>
 
                 <!-- Password -->
-                <div class="mb-2">
-                    <label class="form-label" for="password">
-                        <i class="fas fa-lock"></i>Password <span class="required">*</span>
-                    </label>
-                    <div class="password-wrapper">
-                        <input type="password" id="password" name="password" class="form-control"
-                            placeholder="Minimal 6 karakter" required autocomplete="new-password">
-                        <button type="button" class="password-toggle" id="togglePassword" title="Lihat password"
-                            aria-label="Toggle password visibility">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                    </div>
-                    <div class="password-strength">
-                        <div class="strength-bar">
-                            <div class="strength-fill" id="strengthFill"></div>
-                        </div>
-                        <small class="strength-text" id="strengthText">Gunakan kombinasi huruf & angka</small>
-                    </div>
-                </div>
+<div class="mb-2">
+    <label class="form-label" for="password">
+        <i class="fas fa-lock"></i>Password <span class="required">*</span>
+    </label>
+    <div class="password-wrapper">
+    <input type="password" id="password" name="password" class="form-control"
+        placeholder="Minimal 6 karakter" required>
+    <button type="button" class="password-toggle" id="togglePassword">
+        <i class="fas fa-eye"></i>
+    </button>
+</div>
+    <div class="password-strength">
+        <div class="strength-bar">
+            <div class="strength-fill" id="strengthFill"></div>
+        </div>
+        <small class="strength-text" id="strengthText">Gunakan kombinasi huruf & angka</small>
+    </div>
+</div>
 
                 <!-- Terms -->
                 <div class="terms-check">
