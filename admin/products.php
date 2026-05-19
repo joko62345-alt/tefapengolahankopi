@@ -146,8 +146,13 @@ class ProductsController {
         $stmt = mysqli_prepare($this->conn, $query);
         mysqli_stmt_bind_param($stmt, "ssdissi", $nama, $deskripsi, $harga, $new_stock, $kategori, $gambar_name, $id);
 
+        // ✅ PERBAIKAN: Pesan sukses hanya menampilkan info stok jika stok benar-benar berubah
         if (mysqli_stmt_execute($stmt)) {
-            $this->success = 'Produk berhasil diupdate! Stok: ' . $old_stock . ' → ' . $new_stock;
+            if ($new_stock != $old_stock) {
+                $this->success = 'Produk berhasil diupdate! Stok: ' . $old_stock . ' → ' . $new_stock;
+            } else {
+                $this->success = 'Produk berhasil diupdate!';
+            }
         } else {
             $this->error = 'Gagal update produk: ' . mysqli_error($this->conn);
             error_log("Update product failed: " . mysqli_error($this->conn));
