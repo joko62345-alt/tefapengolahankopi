@@ -33,6 +33,13 @@ if (isset($_GET['product'])) {
 
 $my_transactions = mysqli_query($conn, "SELECT * FROM transactions WHERE user_id='$user_id' ORDER BY tanggal_transaksi DESC LIMIT 10");
 $products = mysqli_query($conn, "SELECT * FROM products WHERE stok > 0 ORDER BY created_at DESC");
+
+// Ambil stok produk untuk validasi di frontend
+$products_stock = [];
+$prod_query = mysqli_query($conn, "SELECT id, stok FROM products WHERE stok > 0");
+while ($p = mysqli_fetch_assoc($prod_query)) {
+    $products_stock[$p['id']] = (int) $p['stok'];
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -46,6 +53,73 @@ $products = mysqli_query($conn, "SELECT * FROM products WHERE stok > 0 ORDER BY 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/dashboard.css">
+    <style>
+        /* Style untuk quantity control */
+        .qty-control {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 8px;
+        }
+        .qty-btn {
+            width: 28px;
+            height: 28px;
+            border: 1px solid #dee2e6;
+            background: #f8f9fa;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            color: #2C1810;
+            transition: all 0.2s;
+            padding: 0;
+            line-height: 1;
+        }
+        .qty-btn:hover {
+            background: #2C1810;
+            color: #fff;
+            border-color: #2C1810;
+        }
+        .qty-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .qty-input {
+            width: 45px;
+            height: 28px;
+            text-align: center;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 500;
+            -moz-appearance: textfield;
+        }
+        .qty-input::-webkit-outer-spin-button,
+        .qty-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .qty-input:focus {
+            outline: none;
+            border-color: #A67C52;
+            box-shadow: 0 0 0 2px rgba(166, 124, 82, 0.2);
+        }
+        .btn-remove {
+            background: none;
+            border: none;
+            color: #dc3545;
+            cursor: pointer;
+            padding: 4px 8px;
+            font-size: 12px;
+            transition: opacity 0.2s;
+        }
+        .btn-remove:hover {
+            opacity: 0.8;
+        }
+    </style>
 </head>
 <body>
     <nav class="navbar navbar-expand-md navbar-dark fixed-top">
@@ -471,499 +545,536 @@ $products = mysqli_query($conn, "SELECT * FROM products WHERE stok > 0 ORDER BY 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-      
+        // Pass stock data to JavaScript
+        const productsStock = <?= json_encode($products_stock) ?>;
 
-// Initialize cart from PHP session
-let cart = <?= json_encode($_SESSION['cart'] ?? []) ?>;
+        // Initialize cart from PHP session
+        let cart = <?= json_encode($_SESSION['cart'] ?? []) ?>;
 
-// ✅ Professional Rupiah Formatter (Monospace-friendly)
-function formatRupiahPro(amount) {
-    return new Intl.NumberFormat('id-ID', {
-        style: 'currency',
-        currency: 'IDR',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-    }).format(amount).replace('Rp', 'Rp ').trim();
-}
-
-//  Add to Cart
-function addToCart(id, name, price, stock) {
-    const existing = cart.find(i => i.id === id);
-    
-    if (existing) {
-        if (existing.qty < stock) {
-            existing.qty++;
-            showNotification('success', `${name} ditambahkan ke keranjang`);
-        } else {
-            showNotification('error', 'Stok tidak mencukupi');
-            return;
+        // ✅ Professional Rupiah Formatter (Monospace-friendly)
+        function formatRupiahPro(amount) {
+            return new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: 'IDR',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(amount).replace('Rp', 'Rp ').trim();
         }
-    } else {
-        if (stock > 0) {
-            cart.push({ id, name, price, qty: 1 });
-            showNotification('success', `${name} ditambahkan ke keranjang`);
-        } else {
-            showNotification('error', 'Produk habis');
-            return;
-        }
-    }
-    
-    updateCart();
-    saveCart();
-}
 
-//  Remove from Cart
-function removeFromCart(index) {
-    if (cart[index]) {
-        cart.splice(index, 1);
-        updateCart();
-        saveCart();
-        showNotification('success', 'Item dihapus dari keranjang');
-    }
-}
-
-//  Update Quantity
-function updateQty(index, change) {
-    if (!cart[index]) return;
-    
-    const newQty = cart[index].qty + change;
-    
-    if (newQty > 0) {
-        cart[index].qty = newQty;
-        updateCart();
-        saveCart();
-    } else {
-        removeFromCart(index);
-    }
-}
-
-//  Update Cart Display (Sidebar Widget)
-function updateCart() {
-    const cartItemsEl = document.getElementById('cartItems');
-    const cartSummaryEl = document.getElementById('cartSummary');
-    const cartCountEl = document.getElementById('cartCount');
-    
-    // Filter invalid items
-    cart = cart.filter(item => item && item.id && item.price);
-    
-    if (!cart || cart.length === 0) {
-        if (cartItemsEl) {
-            cartItemsEl.innerHTML = `
-                <div class="cart-empty">
-                    <i class="fas fa-basket-shopping"></i>
-                    <p class="mb-1 fw-medium">Keranjang masih kosong</p>
-                    <small class="d-block">Pilih produk untuk mulai belanja</small>
-                </div>
-            `;
-        }
-        if (cartSummaryEl) cartSummaryEl.style.display = 'none';
-        if (cartCountEl) cartCountEl.textContent = '0 item';
-        return;
-    }
-    
-    let html = '';
-    let total = 0;
-    let count = 0;
-    
-    cart.forEach((item, i) => {
-        const subtotal = item.price * item.qty;
-        total += subtotal;
-        count += item.qty;
-        
-        html += `
-            <div class="cart-item">
-                <div class="cart-item-info">
-                    <h6>${item.name}</h6>
-                    <div class="cart-item-meta">${formatRupiahPro(item.price)} × ${item.qty}</div>
-                    <div class="qty-control">
-                        <button class="qty-btn" onclick="updateQty(${i}, -1)">−</button>
-                        <span class="fw-medium">${item.qty}</span>
-                        <button class="btn-remove" onclick="removeFromCart(${i})" title="Hapus">
-                            <i class="fas fa-trash-alt"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="text-end">
-                    <div class="cart-item-price">${formatRupiahPro(subtotal)}</div>
-                </div>
-            </div>
-        `;
-    });
-    
-    if (cartItemsEl) cartItemsEl.innerHTML = html;
-    if (document.getElementById('cartSubtotal')) {
-        document.getElementById('cartSubtotal').textContent = formatRupiahPro(total);
-    }
-    if (document.getElementById('modalTotal')) {
-        document.getElementById('modalTotal').textContent = formatRupiahPro(total);
-    }
-    if (cartCountEl) {
-        cartCountEl.textContent = count + ' item' + (count !== 1 ? 's' : '');
-    }
-    if (cartSummaryEl) cartSummaryEl.style.display = 'block';
-}
-
-//  Save Cart to Session (AJAX)
-function saveCart() {
-    fetch('ajax_cart.php', {
-        method: 'POST',
-        headers: { 
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'X-Requested-With': 'XMLHttpRequest'
-        },
-        body: 'cart=' + encodeURIComponent(JSON.stringify(cart))
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            console.log('Cart saved successfully');
-        }
-    })
-    .catch(error => {
-        console.log('Cart sync error:', error);
-    });
-}
-
-//  Populate Checkout Modal Items (HANYA update dynamic content)
-function populateCheckoutItems() {
-    const container = document.getElementById('checkoutItems');
-    if (!container || !cart || cart.length === 0) {
-        if (container) {
-            container.innerHTML = '<p class="text-muted small text-center py-3">Keranjang kosong</p>';
-        }
-        return;
-    }
-    
-    let html = '';
-    let subtotal = 0;
-    
-    cart.forEach(item => {
-        const itemTotal = item.price * item.qty;
-        subtotal += itemTotal;
-        
-        html += `
-            <div class="order-item">
-                <div class=">
-                  
-                </div>
-                <div class="order-item-details">
-                    <div class="order-item-name">${item.name}</div>
-                    <div class="order-item-meta">
-                        <span class="order-item-qty">${item.qty}×</span>
-                        <span>${formatRupiahPro(item.price)}</span>
-                    </div>
-                </div>
-                <div class="order-item-price">${formatRupiahPro(itemTotal)}</div>
-            </div>
-        `;
-    });
-    
-    if (container) container.innerHTML = html;
-    
-    //  HANYA update angka/harga (dynamic), JANGAN ubah teks statis
-    if (document.getElementById('subtotalDisplay')) {
-        document.getElementById('subtotalDisplay').textContent = formatRupiahPro(subtotal);
-    }
-    if (document.getElementById('modalTotal')) {
-        document.getElementById('modalTotal').textContent = formatRupiahPro(subtotal);
-    }
-    if (document.getElementById('cartData')) {
-        document.getElementById('cartData').value = JSON.stringify(cart);
-    }
-    
-}
-
-//  Select Payment Method
-function selectPayment(method) {
-    if (!method) return;
-    
-    // Update hidden input
-    const paymentInput = document.getElementById('payment_method');
-    if (paymentInput) {
-        paymentInput.value = method;
-    }
-    
-    // Update visual selection
-    document.querySelectorAll('.payment-card').forEach(card => {
-        card.classList.remove('selected');
-    });
-    
-    if (event && event.currentTarget) {
-        event.currentTarget.classList.add('selected');
-    }
-    
-    // Enable submit button
-    const submitBtn = document.getElementById('btnBayar');
-    if (submitBtn) {
-        submitBtn.disabled = false;
-    }
-}
-
-//  Show Checkout Modal - TIDAK override text tombol
-function showCheckoutModal() {
-    if (!cart || cart.length === 0) {
-        showNotification('error', 'Keranjang belanja masih kosong');
-        return;
-    }
-    
-    // Populate items (hanya dynamic content)
-    populateCheckoutItems();
-    
-    //  Reset button state TANPA ubah text
-    const submitBtn = document.getElementById('btnBayar');
-    if (submitBtn) {
-        submitBtn.disabled = false;
-        
-    }
-    
-    // Reset payment selection
-    const paymentInput = document.getElementById('payment_method');
-    if (paymentInput) {
-        paymentInput.value = 'cod';
-    }
-    
-    const codCard = document.getElementById('card-cod');
-    if (codCard) {
-        codCard.classList.add('selected');
-    }
-    
-    // Show modal
-    const modal = new bootstrap.Modal(document.getElementById('checkoutModal'));
-    modal.show();
-}
-
-//  Show Profile Modal
-function showProfileModal() {
-    const modal = new bootstrap.Modal(document.getElementById('profileModal'));
-    modal.show();
-}
-
-//  View Receipt (Same as transactions.php)
-function viewReceipt(kode) {
-    fetch(`receipt.php?kode=${encodeURIComponent(kode)}&format=json`, {
-        headers: {
-            'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.error) {
-            showNotification('error', data.error);
-            return;
-        }
-        populateReceiptModal(data);
-        const modal = new bootstrap.Modal(document.getElementById('receiptModal'));
-        modal.show();
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showNotification('error', 'Gagal memuat struk');
-    });
-}
-
-//  Populate Receipt Modal (HANYA dynamic content)
-function populateReceiptModal(data) {
-    //  Update hanya data dinamis dari database
-    if (document.getElementById('receiptKode')) {
-        document.getElementById('receiptKode').textContent = data.kode_transaksi;
-    }
-    if (document.getElementById('receiptTanggal')) {
-        document.getElementById('receiptTanggal').textContent = formatDateIndonesia(data.tanggal_transaksi);
-    }
-    if (document.getElementById('receiptNama')) {
-        document.getElementById('receiptNama').textContent = data.nama_lengkap;
-    }
-    if (document.getElementById('receiptTelepon')) {
-        document.getElementById('receiptTelepon').textContent = data.telepon;
-    }
-
-    // Status pembayaran
-    const statusEl = document.getElementById('receiptStatus');
-    if (statusEl) {
-        statusEl.textContent = data.status_pembayaran.toUpperCase();
-        statusEl.style.background = data.status_pembayaran === 'lunas' ? '#000' : '#fff';
-        statusEl.style.color = data.status_pembayaran === 'lunas' ? '#fff' : '#000';
-    }
-
-    // Status pengambilan
-    const pickupStatusEl = document.getElementById('receiptPickupStatus');
-    const pickupInfoEl = document.getElementById('receiptPickupInfo');
-    if (pickupStatusEl && pickupInfoEl) {
-        if (data.status_pengambilan === 'sudah_diambil') {
-            pickupStatusEl.innerHTML = ' SUDAH DIAMBIL';
-            pickupInfoEl.innerHTML = formatDateIndonesia(data.tanggal_diambil) + '<br>Oleh: ' + data.diambil_oleh;
-        } else {
-            pickupStatusEl.innerHTML = 'BELUM DIAMBIL';
-            pickupInfoEl.innerHTML = 'Tunjukkan struk ini ke admin saat ambil';
-        }
-    }
-
-    // Items
-    let itemsHtml = '';
-    if (data.items && Array.isArray(data.items)) {
-        data.items.forEach(item => {
-            const qty = item.qty || item.quantity || 1;
-            const subtotal = item.subtotal || (item.harga * qty);
-            itemsHtml += `
-                <div class="receipt-item">
-                    <span class="item-name">${item.nama_produk || item.nama}</span>
-                    <span class="item-qty">${qty}x</span>
-                    <span class="item-price">Rp ${formatRupiahPro(subtotal).replace('Rp ', '')}</span>
-                </div>
-            `;
-        });
-    }
-    if (document.getElementById('receiptItems')) {
-        document.getElementById('receiptItems').innerHTML = itemsHtml;
-    }
-
-    // Total
-    if (document.getElementById('receiptTotal')) {
-        document.getElementById('receiptTotal').textContent = 'Rp ' + formatRupiahPro(data.total_harga).replace('Rp ', '');
-    }
-
-    // Payment method (dynamic based on data)
-    const paymentMethod = data.metode_pembayaran || data.payment_method || 'cod';
-    const paymentEl = document.getElementById('receiptPayment');
-    const paymentDescEl = document.getElementById('receiptPaymentDesc');
-    
-    if (paymentEl && paymentDescEl) {
-        if (paymentMethod === 'qris') {
-            paymentEl.textContent = 'QRIS (Digital)';
-            paymentDescEl.textContent = 'Pembayaran via QR Code';
-        } else {
-            paymentEl.textContent = 'COD (Cash)';
-            paymentDescEl.textContent = 'Bayar tunai di outlet TEFA Coffee';
-        }
-    }
-
-    // Timestamp (dynamic)
-    if (document.getElementById('receiptTimestamp')) {
-        document.getElementById('receiptTimestamp').textContent = 'Dicetak: ' + new Date().toLocaleString('id-ID');
-    }
-    
-}
-
-//  Format Date Indonesia
-function formatDateIndonesia(dateString) {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    return `${day}/${month}/${year} ${hours}:${minutes}`;
-}
-
-//  Print Receipt
-function printModalReceipt() {
-    const printWindow = window.open('', '_blank', 'width=400,height=700');
-    const modalContent = document.querySelector('#receiptModal .modal-content');
-    
-    if (!modalContent) {
-        showNotification('error', 'Gagal memuat struk untuk dicetak');
-        return;
-    }
-    
-    printWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Cetak Struk</title>
-            <style>
-                body { 
-                    font-family: 'Courier New', Courier, monospace; 
-                    padding: 20px; 
-                    background: white; 
-                    margin: 0; 
+        //  Add to Cart
+        function addToCart(id, name, price, stock) {
+            const existing = cart.find(i => i.id === id);
+            
+            if (existing) {
+                if (existing.qty < stock) {
+                    existing.qty++;
+                    showNotification('success', `${name} ditambahkan ke keranjang`);
+                } else {
+                    showNotification('error', 'Stok tidak mencukupi');
+                    return;
                 }
-                .modal-content { 
-                    box-shadow: none !important; 
-                    border: none !important; 
-                    max-width: 100%; 
+            } else {
+                if (stock > 0) {
+                    cart.push({ id, name, price, qty: 1 });
+                    showNotification('success', `${name} ditambahkan ke keranjang`);
+                } else {
+                    showNotification('error', 'Produk habis');
+                    return;
                 }
-                .modal-footer, .btn-close { 
-                    display: none !important; 
-                }
-                @media print { 
-                    body { padding: 0; } 
-                    .no-print { display: none !important; } 
-                }
-            </style>
-        </head>
-        <body>${modalContent.outerHTML}</body>
-        </html>
-    `);
-    printWindow.document.close();
-    setTimeout(() => printWindow.print(), 500);
-}
-
-//  Show Notification Toast
-function showNotification(type, message) {
-    // Remove existing toast
-    const existing = document.querySelector('.toast-notification');
-    if (existing) existing.remove();
-    
-    // Create new toast
-    const toast = document.createElement('div');
-    toast.className = `toast-notification alert alert-${type === 'success' ? 'success' : 'danger'} toast-${type}`;
-    toast.innerHTML = `
-        <div class="d-flex align-items-center p-3">
-            <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'} me-3" style="font-size:1.2rem"></i>
-            <span class="flex-grow-1 fw-medium">${message}</span>
-            <button class="btn-close btn-close-white" onclick="this.closest('.toast-notification').remove()"></button>
-        </div>
-    `;
-    
-    document.body.appendChild(toast);
-    
-    // Auto remove after 3 seconds
-    setTimeout(() => {
-        if (toast.parentElement) {
-            toast.style.opacity = '0';
-            toast.style.transform = 'translateX(120px)';
-            setTimeout(() => toast.remove(), 300);
-        }
-    }, 3000);
-}
-
-//  Prevent Double Submit on Checkout Form
-function initCheckoutForm() {
-    const checkoutForm = document.getElementById('checkoutForm');
-    if (!checkoutForm) return;
-    
-    checkoutForm.addEventListener('submit', function(e) {
-        const submitBtn = document.getElementById('btnBayar');
-        if (submitBtn) {
-            submitBtn.disabled = true;
-            //  Hanya ubah saat loading, text asli tetap dari HTML
-            submitBtn.dataset.originalText = submitBtn.innerHTML;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
-        }
-    });
-}
-
-//  Initialize on DOM Ready
-document.addEventListener('DOMContentLoaded', function() {
-    console.log(' JavaScript loaded - Cart:', cart);
-    updateCart();
-    initCheckoutForm();
-    
-    // Close sidebar on mobile when clicking link
-    document.querySelectorAll('.sidebar-menu a, .navbar-nav a').forEach(link => {
-        link.addEventListener('click', function() {
-            if (window.innerWidth <= 768) {
-                const sidebar = document.getElementById('sidebar');
-                const overlay = document.getElementById('sidebarOverlay');
-                if (sidebar) sidebar.classList.remove('active');
-                if (overlay) overlay.classList.remove('active');
-                document.body.style.overflow = '';
             }
+            
+            updateCart();
+            saveCart();
+        }
+
+        //  Remove from Cart
+        function removeFromCart(index) {
+            if (cart[index]) {
+                cart.splice(index, 1);
+                updateCart();
+                saveCart();
+                showNotification('success', 'Item dihapus dari keranjang');
+            }
+        }
+
+        //  Update Quantity with +/- buttons
+        function updateQty(index, change) {
+            if (!cart[index]) return;
+            
+            const productId = cart[index].id;
+            const maxStock = productsStock[productId] || 0;
+            const newQty = cart[index].qty + change;
+            
+            if (newQty > maxStock) {
+                showNotification('error', `Stok maksimal hanya ${maxStock} pcs`);
+                return;
+            }
+            
+            if (newQty > 0) {
+                cart[index].qty = newQty;
+                updateCart();
+                saveCart();
+            } else {
+                removeFromCart(index);
+            }
+        }
+
+        //  Update Quantity with direct input
+        function updateQtyDirect(index, value) {
+            if (!cart[index]) return;
+            
+            const productId = cart[index].id;
+            const maxStock = productsStock[productId] || 0;
+            let newQty = parseInt(value) || 0;
+            
+            // Validasi: minimal 1, maksimal stok tersedia
+            if (newQty < 1) {
+                showNotification('error', 'Jumlah minimal 1 pcs');
+                updateCart(); // Refresh UI ke nilai sebelumnya
+                return;
+            }
+            if (newQty > maxStock) {
+                showNotification('error', `Stok maksimal hanya ${maxStock} pcs`);
+                updateCart(); // Refresh UI ke nilai sebelumnya
+                return;
+            }
+            
+            cart[index].qty = newQty;
+            updateCart();
+            saveCart();
+            showNotification('success', 'Jumlah diperbarui');
+        }
+
+        //  Update Cart Display (Sidebar Widget)
+        function updateCart() {
+            const cartItemsEl = document.getElementById('cartItems');
+            const cartSummaryEl = document.getElementById('cartSummary');
+            const cartCountEl = document.getElementById('cartCount');
+            
+            // Filter invalid items
+            cart = cart.filter(item => item && item.id && item.price);
+            
+            if (!cart || cart.length === 0) {
+                if (cartItemsEl) {
+                    cartItemsEl.innerHTML = `
+                        <div class="cart-empty">
+                            <i class="fas fa-basket-shopping"></i>
+                            <p class="mb-1 fw-medium">Keranjang masih kosong</p>
+                            <small class="d-block">Pilih produk untuk mulai belanja</small>
+                        </div>
+                    `;
+                }
+                if (cartSummaryEl) cartSummaryEl.style.display = 'none';
+                if (cartCountEl) cartCountEl.textContent = '0 item';
+                return;
+            }
+            
+            let html = '';
+            let total = 0;
+            let count = 0;
+            
+            cart.forEach((item, i) => {
+                const subtotal = item.price * item.qty;
+                total += subtotal;
+                count += item.qty;
+                const maxStock = productsStock[item.id] || 0;
+                
+                html += `
+                    <div class="cart-item">
+                        <div class="cart-item-info">
+                            <h6>${item.name}</h6>
+                            <div class="cart-item-meta">${formatRupiahPro(item.price)} × <span id="qty-display-${i}">${item.qty}</span></div>
+                            <div class="qty-control">
+                                <button class="qty-btn" onclick="updateQty(${i}, -1)" ${item.qty <= 1 ? 'disabled' : ''}>−</button>
+                                <input type="number" class="qty-input" value="${item.qty}" min="1" max="${maxStock}" 
+                                    onchange="updateQtyDirect(${i}, this.value)" onblur="if(this.value<1||this.value>${maxStock}){this.value=${item.qty}}">
+                                <button class="qty-btn" onclick="updateQty(${i}, 1)" ${item.qty >= maxStock ? 'disabled' : ''}>+</button>
+                                <button class="btn-remove" onclick="removeFromCart(${i})" title="Hapus">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <div class="cart-item-price">${formatRupiahPro(subtotal)}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            if (cartItemsEl) cartItemsEl.innerHTML = html;
+            if (document.getElementById('cartSubtotal')) {
+                document.getElementById('cartSubtotal').textContent = formatRupiahPro(total);
+            }
+            if (document.getElementById('modalTotal')) {
+                document.getElementById('modalTotal').textContent = formatRupiahPro(total);
+            }
+            if (cartCountEl) {
+                cartCountEl.textContent = count + ' item' + (count !== 1 ? 's' : '');
+            }
+            if (cartSummaryEl) cartSummaryEl.style.display = 'block';
+        }
+
+        //  Save Cart to Session (AJAX)
+        function saveCart() {
+            fetch('ajax_cart.php', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: 'cart=' + encodeURIComponent(JSON.stringify(cart))
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('Cart saved successfully');
+                }
+            })
+            .catch(error => {
+                console.log('Cart sync error:', error);
+            });
+        }
+
+        //  Populate Checkout Modal Items (HANYA update dynamic content)
+        function populateCheckoutItems() {
+            const container = document.getElementById('checkoutItems');
+            if (!container || !cart || cart.length === 0) {
+                if (container) {
+                    container.innerHTML = '<p class="text-muted small text-center py-3">Keranjang kosong</p>';
+                }
+                return;
+            }
+            
+            let html = '';
+            let subtotal = 0;
+            
+            cart.forEach(item => {
+                const itemTotal = item.price * item.qty;
+                subtotal += itemTotal;
+                
+                html += `
+                    <div class="order-item">
+                        <div class=">
+                          
+                        </div>
+                        <div class="order-item-details">
+                            <div class="order-item-name">${item.name}</div>
+                            <div class="order-item-meta">
+                                <span class="order-item-qty">${item.qty}×</span>
+                                <span>${formatRupiahPro(item.price)}</span>
+                            </div>
+                        </div>
+                        <div class="order-item-price">${formatRupiahPro(itemTotal)}</div>
+                    </div>
+                `;
+            });
+            
+            if (container) container.innerHTML = html;
+            
+            //  HANYA update angka/harga (dynamic), JANGAN ubah teks statis
+            if (document.getElementById('subtotalDisplay')) {
+                document.getElementById('subtotalDisplay').textContent = formatRupiahPro(subtotal);
+            }
+            if (document.getElementById('modalTotal')) {
+                document.getElementById('modalTotal').textContent = formatRupiahPro(subtotal);
+            }
+            if (document.getElementById('cartData')) {
+                document.getElementById('cartData').value = JSON.stringify(cart);
+            }
+            
+        }
+
+        //  Select Payment Method
+        function selectPayment(method) {
+            if (!method) return;
+            
+            // Update hidden input
+            const paymentInput = document.getElementById('payment_method');
+            if (paymentInput) {
+                paymentInput.value = method;
+            }
+            
+            // Update visual selection
+            document.querySelectorAll('.payment-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            if (event && event.currentTarget) {
+                event.currentTarget.classList.add('selected');
+            }
+            
+            // Enable submit button
+            const submitBtn = document.getElementById('btnBayar');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+            }
+        }
+
+        //  Show Checkout Modal - TIDAK override text tombol
+        function showCheckoutModal() {
+            if (!cart || cart.length === 0) {
+                showNotification('error', 'Keranjang belanja masih kosong');
+                return;
+            }
+            
+            // Populate items (hanya dynamic content)
+            populateCheckoutItems();
+            
+            //  Reset button state TANPA ubah text
+            const submitBtn = document.getElementById('btnBayar');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                
+            }
+            
+            // Reset payment selection
+            const paymentInput = document.getElementById('payment_method');
+            if (paymentInput) {
+                paymentInput.value = 'cod';
+            }
+            
+            const codCard = document.getElementById('card-cod');
+            if (codCard) {
+                codCard.classList.add('selected');
+            }
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('checkoutModal'));
+            modal.show();
+        }
+
+        //  Show Profile Modal
+        function showProfileModal() {
+            const modal = new bootstrap.Modal(document.getElementById('profileModal'));
+            modal.show();
+        }
+
+        //  View Receipt (Same as transactions.php)
+        function viewReceipt(kode) {
+            fetch(`receipt.php?kode=${encodeURIComponent(kode)}&format=json`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    showNotification('error', data.error);
+                    return;
+                }
+                populateReceiptModal(data);
+                const modal = new bootstrap.Modal(document.getElementById('receiptModal'));
+                modal.show();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('error', 'Gagal memuat struk');
+            });
+        }
+
+        //  Populate Receipt Modal (HANYA dynamic content)
+        function populateReceiptModal(data) {
+            //  Update hanya data dinamis dari database
+            if (document.getElementById('receiptKode')) {
+                document.getElementById('receiptKode').textContent = data.kode_transaksi;
+            }
+            if (document.getElementById('receiptTanggal')) {
+                document.getElementById('receiptTanggal').textContent = formatDateIndonesia(data.tanggal_transaksi);
+            }
+            if (document.getElementById('receiptNama')) {
+                document.getElementById('receiptNama').textContent = data.nama_lengkap;
+            }
+            if (document.getElementById('receiptTelepon')) {
+                document.getElementById('receiptTelepon').textContent = data.telepon;
+            }
+
+            // Status pembayaran
+            const statusEl = document.getElementById('receiptStatus');
+            if (statusEl) {
+                statusEl.textContent = data.status_pembayaran.toUpperCase();
+                statusEl.style.background = data.status_pembayaran === 'lunas' ? '#000' : '#fff';
+                statusEl.style.color = data.status_pembayaran === 'lunas' ? '#fff' : '#000';
+            }
+
+            // Status pengambilan
+            const pickupStatusEl = document.getElementById('receiptPickupStatus');
+            const pickupInfoEl = document.getElementById('receiptPickupInfo');
+            if (pickupStatusEl && pickupInfoEl) {
+                if (data.status_pengambilan === 'sudah_diambil') {
+                    pickupStatusEl.innerHTML = ' SUDAH DIAMBIL';
+                    pickupInfoEl.innerHTML = formatDateIndonesia(data.tanggal_diambil) + '<br>Oleh: ' + data.diambil_oleh;
+                } else {
+                    pickupStatusEl.innerHTML = 'BELUM DIAMBIL';
+                    pickupInfoEl.innerHTML = 'Tunjukkan struk ini ke admin saat ambil';
+                }
+            }
+
+            // Items
+            let itemsHtml = '';
+            if (data.items && Array.isArray(data.items)) {
+                data.items.forEach(item => {
+                    const qty = item.qty || item.quantity || 1;
+                    const subtotal = item.subtotal || (item.harga * qty);
+                    itemsHtml += `
+                        <div class="receipt-item">
+                            <span class="item-name">${item.nama_produk || item.nama}</span>
+                            <span class="item-qty">${qty}x</span>
+                            <span class="item-price">Rp ${formatRupiahPro(subtotal).replace('Rp ', '')}</span>
+                        </div>
+                    `;
+                });
+            }
+            if (document.getElementById('receiptItems')) {
+                document.getElementById('receiptItems').innerHTML = itemsHtml;
+            }
+
+            // Total
+            if (document.getElementById('receiptTotal')) {
+                document.getElementById('receiptTotal').textContent = 'Rp ' + formatRupiahPro(data.total_harga).replace('Rp ', '');
+            }
+
+            // Payment method (dynamic based on data)
+            const paymentMethod = data.metode_pembayaran || data.payment_method || 'cod';
+            const paymentEl = document.getElementById('receiptPayment');
+            const paymentDescEl = document.getElementById('receiptPaymentDesc');
+            
+            if (paymentEl && paymentDescEl) {
+                if (paymentMethod === 'qris') {
+                    paymentEl.textContent = 'QRIS (Digital)';
+                    paymentDescEl.textContent = 'Pembayaran via QR Code';
+                } else {
+                    paymentEl.textContent = 'COD (Cash)';
+                    paymentDescEl.textContent = 'Bayar tunai di outlet TEFA Coffee';
+                }
+            }
+
+            // Timestamp (dynamic)
+            if (document.getElementById('receiptTimestamp')) {
+                document.getElementById('receiptTimestamp').textContent = 'Dicetak: ' + new Date().toLocaleString('id-ID');
+            }
+            
+        }
+
+        //  Format Date Indonesia
+        function formatDateIndonesia(dateString) {
+            if (!dateString) return '-';
+            const date = new Date(dateString);
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${day}/${month}/${year} ${hours}:${minutes}`;
+        }
+
+        //  Print Receipt
+        function printModalReceipt() {
+            const printWindow = window.open('', '_blank', 'width=400,height=700');
+            const modalContent = document.querySelector('#receiptModal .modal-content');
+            
+            if (!modalContent) {
+                showNotification('error', 'Gagal memuat struk untuk dicetak');
+                return;
+            }
+            
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Cetak Struk</title>
+                    <style>
+                        body { 
+                            font-family: 'Courier New', Courier, monospace; 
+                            padding: 20px; 
+                            background: white; 
+                            margin: 0; 
+                        }
+                        .modal-content { 
+                            box-shadow: none !important; 
+                            border: none !important; 
+                            max-width: 100%; 
+                        }
+                        .modal-footer, .btn-close { 
+                            display: none !important; 
+                        }
+                        @media print { 
+                            body { padding: 0; } 
+                            .no-print { display: none !important; } 
+                        }
+                    </style>
+                </head>
+                <body>${modalContent.outerHTML}</body>
+                </html>
+            `);
+            printWindow.document.close();
+            setTimeout(() => printWindow.print(), 500);
+        }
+
+        //  Show Notification Toast
+        function showNotification(type, message) {
+            // Remove existing toast
+            const existing = document.querySelector('.toast-notification');
+            if (existing) existing.remove();
+            
+            // Create new toast
+            const toast = document.createElement('div');
+            toast.className = `toast-notification alert alert-${type === 'success' ? 'success' : 'danger'} toast-${type}`;
+            toast.innerHTML = `
+                <div class="d-flex align-items-center p-3">
+                    <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'} me-3" style="font-size:1.2rem"></i>
+                    <span class="flex-grow-1 fw-medium">${message}</span>
+                    <button class="btn-close btn-close-white" onclick="this.closest('.toast-notification').remove()"></button>
+                </div>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            // Auto remove after 3 seconds
+            setTimeout(() => {
+                if (toast.parentElement) {
+                    toast.style.opacity = '0';
+                    toast.style.transform = 'translateX(120px)';
+                    setTimeout(() => toast.remove(), 300);
+                }
+            }, 3000);
+        }
+
+        //  Prevent Double Submit on Checkout Form
+        function initCheckoutForm() {
+            const checkoutForm = document.getElementById('checkoutForm');
+            if (!checkoutForm) return;
+            
+            checkoutForm.addEventListener('submit', function(e) {
+                const submitBtn = document.getElementById('btnBayar');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    //  Hanya ubah saat loading, text asli tetap dari HTML
+                    submitBtn.dataset.originalText = submitBtn.innerHTML;
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+                }
+            });
+        }
+
+        //  Initialize on DOM Ready
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log(' JavaScript loaded - Cart:', cart);
+            updateCart();
+            initCheckoutForm();
+            
+            // Close sidebar on mobile when clicking link
+            document.querySelectorAll('.sidebar-menu a, .navbar-nav a').forEach(link => {
+                link.addEventListener('click', function() {
+                    if (window.innerWidth <= 768) {
+                        const sidebar = document.getElementById('sidebar');
+                        const overlay = document.getElementById('sidebarOverlay');
+                        if (sidebar) sidebar.classList.remove('active');
+                        if (overlay) overlay.classList.remove('active');
+                        document.body.style.overflow = '';
+                    }
+                });
+            });
         });
-    });
-});
     </script>
 </body>
 

@@ -35,28 +35,23 @@ class ProductsController {
         $this->loadData();
     }
 
-    //uplod data
     private function ensureUploadDir(): void {
         if (!is_dir($this->uploadDir)) {
             mkdir($this->uploadDir, 0777, true);
         }
     }
 
-    //Handle semua POST/GET requests (CRUD Operations)
     private function handleRequests(): void {
         if ($this->print_mode) return;
 
-        //  ADD PRODUCT
         if (isset($_POST['add_product'])) {
             $this->addProduct();
         }
         
-        //  UPDATE PRODUCT
         if (isset($_POST['update_product'])) {
             $this->updateProduct();
         }
         
-        // DELETE PRODUCT
         if (isset($_GET['delete'])) {
             $this->deleteProduct();
         }
@@ -68,7 +63,6 @@ class ProductsController {
         $harga      = (float) $_POST['harga'];
         $stok       = (int) $_POST['stok'];
         
-        // Simpan kategori persis seperti yang diketik
         $kategori   = mysqli_real_escape_string($this->conn, trim($_POST['kategori']));
         if (empty($kategori)) {
             $kategori = 'lainnya';
@@ -76,7 +70,6 @@ class ProductsController {
 
         $gambar_name = $this->handleFileUpload('gambar');
 
-        //  Gunakan Prepared Statement
         $query = "INSERT INTO products (nama_produk, deskripsi, harga, stok, kategori, gambar)
                   VALUES (?, ?, ?, ?, ?, ?)";
         $stmt = mysqli_prepare($this->conn, $query);
@@ -91,85 +84,76 @@ class ProductsController {
         mysqli_stmt_close($stmt);
     }
 
-    
-       
-        private function updateProduct(): void {
-    $id = (int) $_POST['product_id'];
-    $nama = mysqli_real_escape_string($this->conn, trim($_POST['nama_produk']));
-    $deskripsi = mysqli_real_escape_string($this->conn, trim($_POST['deskripsi']));
-    $harga = (float) $_POST['harga'];
-    
-    // Simpan kategori persis seperti yang diketik
-    $kategori = mysqli_real_escape_string($this->conn, trim($_POST['kategori']));
-    if (empty($kategori)) {
-        $kategori = 'lainnya';
-    }
-    
-    $tambah_stok = isset($_POST['tambah_stok']) ? (int) $_POST['tambah_stok'] : 0;
-    $kurangi_stok = isset($_POST['kurangi_stok']) ? (int) $_POST['kurangi_stok'] : 0;
-    $stock_keterangan = mysqli_real_escape_string($this->conn, $_POST['stock_keterangan'] ?? '');
-
-    // 🔍 Ambil stok saat ini
-    $current = mysqli_fetch_assoc(mysqli_query($this->conn, "SELECT stok FROM products WHERE id=$id"));
-    $old_stock = $current['stok'];
-    
-    // 🚨 VALIDASI: Cek apakah pengurangan stok melebihi stok tersedia
-    $available_stock = $old_stock + $tambah_stok;
-    if ($kurangi_stok > $available_stock) {
-        $this->error = "Gagal update produk: Tidak dapat mengurangi stok sebanyak {$kurangi_stok} pcs. "
-                     . "Stok tersedia hanya {$available_stock} pcs (Stok awal: {$old_stock} + Restok: {$tambah_stok})";
-        return; // ⛔ Hentikan proses jika validasi gagal
-    }
-    
-    $new_stock = $available_stock - $kurangi_stok;
-
-    // Record stock movements
-    if ($tambah_stok > 0) {
-        $ket = !empty($stock_keterangan) ? "Restok: $stock_keterangan" : "Restok manual";
-        mysqli_query($this->conn, "INSERT INTO stock_movements (product_id, jenis, jumlah, keterangan)
-                                    VALUES ($id, 'masuk', $tambah_stok, '$ket')");
-    }
-
-    if ($kurangi_stok > 0) {
-        $ket = !empty($stock_keterangan) ? "Pengurangan: $stock_keterangan" : "Pengurangan manual";
-        mysqli_query($this->conn, "INSERT INTO stock_movements (product_id, jenis, jumlah, keterangan)
-                                    VALUES ($id, 'keluar', $kurangi_stok, '$ket')");
-    }
-
-    $gambar_name = $_POST['gambar_lama'];
-
-    // Handle new image upload
-    if (isset($_FILES['gambar']) && $_FILES['gambar']['error'] == 0) {
-        $new_image = $this->handleFileUpload('gambar');
-        if ($new_image) {
-            // Delete old image if exists
-            if ($gambar_name && file_exists($this->uploadDir . $gambar_name)) {
-                unlink($this->uploadDir . $gambar_name);
-            }
-            $gambar_name = $new_image;
+    private function updateProduct(): void {
+        $id = (int) $_POST['product_id'];
+        $nama = mysqli_real_escape_string($this->conn, trim($_POST['nama_produk']));
+        $deskripsi = mysqli_real_escape_string($this->conn, trim($_POST['deskripsi']));
+        $harga = (float) $_POST['harga'];
+        
+        $kategori = mysqli_real_escape_string($this->conn, trim($_POST['kategori']));
+        if (empty($kategori)) {
+            $kategori = 'lainnya';
         }
-    }
+        
+        $tambah_stok = isset($_POST['tambah_stok']) ? (int) $_POST['tambah_stok'] : 0;
+        $kurangi_stok = isset($_POST['kurangi_stok']) ? (int) $_POST['kurangi_stok'] : 0;
+        $stock_keterangan = mysqli_real_escape_string($this->conn, $_POST['stock_keterangan'] ?? '');
 
-    // Gunakan Prepared Statement untuk UPDATE
-    $query = "UPDATE products SET
-              nama_produk=?,
-              deskripsi=?,
-              harga=?,
-              stok=?,
-              kategori=?,
-              gambar=?
-              WHERE id=?";
-    $stmt = mysqli_prepare($this->conn, $query);
-    mysqli_stmt_bind_param($stmt, "ssdissi", $nama, $deskripsi, $harga, $new_stock, $kategori, $gambar_name, $id);
+        $current = mysqli_fetch_assoc(mysqli_query($this->conn, "SELECT stok FROM products WHERE id=$id"));
+        $old_stock = $current['stok'];
+        
+        $available_stock = $old_stock + $tambah_stok;
+        if ($kurangi_stok > $available_stock) {
+            $this->error = "Gagal update produk: Tidak dapat mengurangi stok sebanyak {$kurangi_stok} pcs. "
+                         . "Stok tersedia hanya {$available_stock} pcs (Stok awal: {$old_stock} + Restok: {$tambah_stok})";
+            return;
+        }
+        
+        $new_stock = $available_stock - $kurangi_stok;
 
-    if (mysqli_stmt_execute($stmt)) {
-        $this->success = 'Produk berhasil diupdate! Stok: ' . $old_stock . ' → ' . $new_stock;
-    } else {
-        $this->error = 'Gagal update produk: ' . mysqli_error($this->conn);
-        error_log("Update product failed: " . mysqli_error($this->conn));
+        if ($tambah_stok > 0) {
+            $ket = !empty($stock_keterangan) ? "Restok: $stock_keterangan" : "Restok manual";
+            mysqli_query($this->conn, "INSERT INTO stock_movements (product_id, jenis, jumlah, keterangan)
+                                        VALUES ($id, 'masuk', $tambah_stok, '$ket')");
+        }
+
+        if ($kurangi_stok > 0) {
+            $ket = !empty($stock_keterangan) ? "Pengurangan: $stock_keterangan" : "Pengurangan manual";
+            mysqli_query($this->conn, "INSERT INTO stock_movements (product_id, jenis, jumlah, keterangan)
+                                        VALUES ($id, 'keluar', $kurangi_stok, '$ket')");
+        }
+
+        $gambar_name = $_POST['gambar_lama'];
+
+        if (isset($_FILES['gambar']) && $_FILES['gambar']['error'] == 0) {
+            $new_image = $this->handleFileUpload('gambar');
+            if ($new_image) {
+                if ($gambar_name && file_exists($this->uploadDir . $gambar_name)) {
+                    unlink($this->uploadDir . $gambar_name);
+                }
+                $gambar_name = $new_image;
+            }
+        }
+
+        $query = "UPDATE products SET
+                  nama_produk=?,
+                  deskripsi=?,
+                  harga=?,
+                  stok=?,
+                  kategori=?,
+                  gambar=?
+                  WHERE id=?";
+        $stmt = mysqli_prepare($this->conn, $query);
+        mysqli_stmt_bind_param($stmt, "ssdissi", $nama, $deskripsi, $harga, $new_stock, $kategori, $gambar_name, $id);
+
+        if (mysqli_stmt_execute($stmt)) {
+            $this->success = 'Produk berhasil diupdate! Stok: ' . $old_stock . ' → ' . $new_stock;
+        } else {
+            $this->error = 'Gagal update produk: ' . mysqli_error($this->conn);
+            error_log("Update product failed: " . mysqli_error($this->conn));
+        }
+        mysqli_stmt_close($stmt);
     }
-    mysqli_stmt_close($stmt);
-}
 
     private function deleteProduct(): void {
         $id = (int) $_GET['delete'];
@@ -190,7 +174,6 @@ class ProductsController {
         }
     }
 
-    //Handle file upload dengan validasi
     private function handleFileUpload(string $fieldName): string {
         if (!isset($_FILES[$fieldName]) || $_FILES[$fieldName]['error'] != 0) {
             return '';
@@ -212,7 +195,6 @@ class ProductsController {
         return '';
     }
 
-    //Load filter parameters dari GET
     private function loadFilters(): void {
         $this->filter_product = $_GET['filter_product'] ?? '';
         $this->filter_jenis = $_GET['filter_jenis'] ?? '';
@@ -220,7 +202,6 @@ class ProductsController {
         $this->filter_date_to = $_GET['filter_date_to'] ?? '';
     }
 
-    //Build WHERE clause untuk filter stock history
     private function buildHistoryWhereClause(): string {
         $where = "1=1";
         
@@ -240,9 +221,7 @@ class ProductsController {
         return $where;
     }
 
-    // Load data untuk view berdasarkan filter
     private function loadData(): void {
-        //  Load stock history dengan filter
         $where = $this->buildHistoryWhereClause();
         $history_query = mysqli_query($this->conn, "
             SELECT sm.*, p.nama_produk, p.kategori
@@ -258,7 +237,6 @@ class ProductsController {
             $this->all_stock_history[] = $row;
         }
 
-        //  Calculate totals for print report
         foreach ($this->all_stock_history as $hist) {
             if ($hist['jenis'] == 'masuk') {
                 $this->total_masuk += $hist['jumlah'];
@@ -267,7 +245,6 @@ class ProductsController {
             }
         }
 
-        //  Product name for report
         if ($this->filter_product) {
             $prod = mysqli_fetch_assoc(mysqli_query($this->conn, 
                 "SELECT nama_produk FROM products WHERE id = " . (int) $this->filter_product));
@@ -276,7 +253,6 @@ class ProductsController {
             }
         }
 
-        //  Period text for report
         if ($this->filter_date_from && $this->filter_date_to) {
             $this->period_text = date('d M Y', strtotime($this->filter_date_from)) . ' - ' . date('d M Y', strtotime($this->filter_date_to));
         } elseif ($this->filter_date_from) {
@@ -287,97 +263,61 @@ class ProductsController {
             $this->period_text = 'Semua Periode';
         }
 
-        //  Jenis text
         if ($this->filter_jenis) {
             $this->jenis_text = ' | Jenis: ' . ucfirst($this->filter_jenis);
         }
 
-        //  Products list for dropdown
         $products_list_query = mysqli_query($this->conn, "SELECT id, nama_produk FROM products ORDER BY nama_produk");
         while ($p = mysqli_fetch_assoc($products_list_query)) {
             $this->products_list[] = $p;
         }
 
-        //  All products for table
         $products_query = mysqli_query($this->conn, "SELECT * FROM products ORDER BY created_at DESC");
         while ($p = mysqli_fetch_assoc($products_query)) {
             $this->products[] = $p;
         }
     }
 
-    /**
-     * Helper: Get badge class based on stock level
-     */
     public function getStockBadge(string $stok): string {
         return $stok < 20 ? 'badge-danger' : 'badge-success';
     }
 
-    /**
-     * Helper: Get badge class for history type
-     */
     public function getHistoryBadge(string $jenis): string {
         return $jenis == 'masuk' ? 'badge-success' : 'badge-danger';
     }
 
-    /**
-     * Helper: Get icon for history type
-     */
     public function getHistoryIcon(string $jenis): string {
         return $jenis == 'masuk' ? 'arrow-down' : 'arrow-up';
     }
 
-    /**
-     * Helper: Get sign for stock movement
-     */
     public function getStockSign(string $jenis): string {
         return $jenis == 'masuk' ? '+' : '-';
     }
 
-    /**
-     * Helper: Get text color for stock movement
-     */
     public function getStockTextColor(string $jenis): string {
         return $jenis == 'masuk' ? 'text-success' : 'text-danger';
     }
 
-    /**
-     * Helper: Format tanggal
-     */
     public function formatDate(string $datetime, string $format = 'd M Y H:i'): string {
         return date($format, strtotime($datetime));
     }
 
-    /**
-     * Helper: Format Rupiah
-     */
     public function formatRupiah(float $amount): string {
         return 'Rp ' . number_format($amount, 0, ',', '.');
     }
 
-    /**
-     * Helper: Check if image exists
-     */
     public function imageExists(string $filename): bool {
         return $filename && file_exists($this->uploadDir . $filename);
     }
 
-    /**
-     * Helper: Get image path
-     */
     public function getImagePath(string $filename): string {
         return '../assets/images/products/' . $filename;
     }
 
-    /**
-     * Helper: Get current admin name for signature
-     */
     public function getCurrentAdminName(): string {
         return htmlspecialchars($_SESSION['nama_lengkap'] ?? $_SESSION['username'] ?? 'Admin');
     }
 
-    /**
-     * Render print view
-     */
     public function renderPrintView(): void {
         ?>
         <!DOCTYPE html>
@@ -503,10 +443,8 @@ class ProductsController {
     }
 }
 
-//  Inisialisasi Controller
 $products = new ProductsController($conn);
 
-// Render print view jika mode print
 if ($products->print_mode) {
     $products->renderPrintView();
 }
@@ -523,7 +461,6 @@ if ($products->print_mode) {
     <link rel="stylesheet" href="css/products.css">
 </head>
 <body>
-    <!-- Top Header -->
     <div class="top-header">
         <div class="container">
             <div class="header-content">
@@ -542,7 +479,6 @@ if ($products->print_mode) {
         </div>
     </div>
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
-    <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
         <ul class="sidebar-menu">
             <li><a href="dashboard.php"><i class="fas fa-home"></i><span>Dashboard</span></a></li>
@@ -556,14 +492,12 @@ if ($products->print_mode) {
         </ul>
     </div>
 
-    <!-- Main Content Wrapper -->
     <div class="main-wrapper">
         <div class="main-content">
             <div class="page-header">
                 <h1 class="page-title">Kelola Produk</h1>
             </div>
 
-            <!-- Alerts -->
             <?php if ($products->success): ?>
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
                     <i class="fas fa-check-circle"></i> <?= $products->success ?>
@@ -577,14 +511,12 @@ if ($products->print_mode) {
                 </div>
             <?php endif; ?>
 
-            <!-- Form Tambah Produk -->
             <div class="card-custom">
                 <div class="card-header-custom">
                     <span>Tambah Produk Baru</span>
                 </div>
                 <div class="card-body">
                     <form method="POST" enctype="multipart/form-data">
-                        <!--  Nama Produk, Harga, Stok -->
                         <div class="row g-3 mb-3">
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">Nama Produk <span
@@ -603,7 +535,6 @@ if ($products->print_mode) {
                             </div>
                         </div>
 
-                        <!-- Kategori dan Deskripsi -->
                         <div class="row g-3 mb-3">
                             <div class="col-md-4">
                                 <label class="form-label fw-semibold">Kategori <span
@@ -619,7 +550,6 @@ if ($products->print_mode) {
                             </div>
                         </div>
 
-                        <!-- Upload Foto -->
                         <div class="row g-3 mb-4">
                             <div class="col-12">
                                 <label class="form-label fw-semibold">Foto Produk</label>
@@ -643,7 +573,6 @@ if ($products->print_mode) {
                 </div>
             </div>
 
-            <!-- Riwayat Stok Section -->
             <div class="card-custom">
                 <div class="card-header-custom">
                     <span>Riwayat Stok Semua Produk</span>
@@ -769,7 +698,6 @@ if ($products->print_mode) {
                 </div>
             </div>
 
-            <!-- Tabel Produk -->
             <div class="card-custom">
                 <div class="card-header-custom">
                     <span>Daftar Produk</span>
@@ -808,25 +736,26 @@ if ($products->print_mode) {
                                                 <?= $product['stok'] ?>
                                             </span>
                                         </td>
-                                       <!-- Cari bagian ini di dalam loop produk -->
-                                    <td data-label="Aksi">
-                                        <button class="btn btn-sm btn-warning"
-                                            onclick='editProduct(
-                                                <?= json_encode($product['id']) ?>,
-                                                <?= json_encode($product['nama_produk']) ?>,
-                                                <?= json_encode($product['deskripsi'] ?? '') ?>,
-                                                <?= json_encode($product['harga']) ?>,
-                                                <?= json_encode($product['stok']) ?>,
-                                                <?= json_encode($product['kategori']) ?>,
-                                                <?= json_encode($product['gambar']) ?>
-                                            )'title="Edit Produk">
-                                            <i class="fas fa-edit"></i> Edit
-                                        </button>
-                                    <a href="?delete=<?= (int) $product['id'] ?>" class="btn btn-sm btn-danger"
-                                        onclick="return confirm('Yakin hapus produk ini?\\nPeringatan:\\n- Riwayat stok akan dihapus\\n- Detail transaksi akan dihapus\\nProduk: <?= json_encode($product['nama_produk']) ?>')">
-                                        <i class="fas fa-trash"></i> Hapus
-                                    </a>
-                                </td>
+                                        <td data-label="Aksi">
+                                            <button class="btn btn-sm btn-warning"
+                                                onclick='editProduct(
+                                                    <?= json_encode($product['id']) ?>,
+                                                    <?= json_encode($product['nama_produk']) ?>,
+                                                    <?= json_encode($product['deskripsi'] ?? '') ?>,
+                                                    <?= json_encode($product['harga']) ?>,
+                                                    <?= json_encode($product['stok']) ?>,
+                                                    <?= json_encode($product['kategori']) ?>,
+                                                    <?= json_encode($product['gambar']) ?>
+                                                )' title="Edit Produk">
+                                                <i class="fas fa-edit"></i> Edit
+                                            </button>
+                                            <!-- PERBAIKAN: Tombol Hapus dengan escaping yang benar -->
+                                            <a href="?delete=<?= (int) $product['id'] ?>" 
+                                               class="btn btn-sm btn-danger"
+                                               onclick="return confirm('Yakin hapus produk ini?\\n\\nPeringatan:\\n- Riwayat stok akan dihapus\\n- Detail transaksi akan dihapus\\n\\nProduk: <?= addslashes($product['nama_produk']) ?>')">
+                                                <i class="fas fa-trash"></i> Hapus
+                                            </a>
+                                        </td>
                                     </tr>
                                 <?php endforeach; ?>
                             </tbody>
