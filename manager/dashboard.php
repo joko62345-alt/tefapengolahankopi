@@ -24,11 +24,8 @@ class ManagerDashboardController {
         $this->loadData();
     }
 
-    /**
-     * Load semua data dashboard dari sumber yang sama dengan admin
-     */
     private function loadData(): void {
-        // 🔹 Statistics - Transactions & Revenue (sama seperti admin)
+        // Statistics - Transactions & Revenue (sama seperti admin)
         $this->total_transaksi = (int) (mysqli_fetch_assoc(mysqli_query($this->conn, 
             "SELECT COUNT(*) as total FROM transactions WHERE status_pembayaran IN ('lunas','dikonfirmasi')"))['total'] ?? 0);
         
@@ -38,13 +35,13 @@ class ManagerDashboardController {
         $this->total_produk = (int) (mysqli_fetch_assoc(mysqli_query($this->conn, 
             "SELECT SUM(stok) as total FROM products"))['total'] ?? 0);
 
-        // 🔹 Stok Kritis Products (< 20)
+        //  Stok Kritis Products (< 20)
         $stok_kritis_query = mysqli_query($this->conn, "SELECT * FROM products WHERE stok < 20");
         while ($row = mysqli_fetch_assoc($stok_kritis_query)) {
             $this->stok_kritis_products[] = $row;
         }
 
-        // 🔹 Coffee Beans Statistics (sumber data sama dengan admin/stock.php)
+        //  Coffee Beans Statistics (sumber data sama dengan admin/stock.php)
         $beans_query = mysqli_query($this->conn, "SELECT * FROM coffee_beans WHERE stok > 0 ORDER BY nama_biji_kopi ASC");
         while ($bean = mysqli_fetch_assoc($beans_query)) {
             $this->coffee_beans[] = $bean;
@@ -53,16 +50,16 @@ class ManagerDashboardController {
         $this->total_biji_kopi = (float) (mysqli_fetch_assoc(mysqli_query($this->conn, 
             "SELECT SUM(stok) as total FROM coffee_beans WHERE stok > 0"))['total'] ?? 0);
 
-        // 🔹 Beans Kritis (< 10 kg)
+        //  Beans Kritis (< 10 kg)
         $beans_kritis_query = mysqli_query($this->conn, "SELECT * FROM coffee_beans WHERE stok < 10 AND stok > 0");
         while ($bean = mysqli_fetch_assoc($beans_kritis_query)) {
             $this->beans_kritis[] = $bean;
         }
 
-        // 🔹 Total stok kritis (products + beans)
+        //  Total stok kritis (products + beans)
         $this->stok_kritis_count = count($this->stok_kritis_products) + count($this->beans_kritis);
 
-        // 🔹 Sales per product (sama seperti admin)
+        //  Sales per product (sama seperti admin)
         $sales_query = mysqli_query($this->conn, "
             SELECT p.nama_produk, SUM(td.quantity) as total_terjual, SUM(td.subtotal) as total_pendapatan
             FROM transaction_details td
@@ -75,77 +72,59 @@ class ManagerDashboardController {
         
         $this->sales_data = mysqli_fetch_all($sales_query, MYSQLI_ASSOC);
         
-        // 🔹 Prepare chart data
+        //  Prepare chart data
         $this->chart_labels = array_column($this->sales_data, 'nama_produk');
         $this->chart_data = array_column($this->sales_data, 'total_terjual');
     }
 
-    /**
-     * Helper: Get badge class based on stock level for products
-     */
+    // Helper: Get badge class based on stock level for products
     public function getProductStockBadge(int $stok): string {
         return $stok < 20 ? 'badge-danger' : 'badge-success';
     }
 
-    /**
-     * Helper: Get badge class for coffee beans stock
-     */
+    //Helper: Get badge class for coffee beans stock
     public function getBeanStockBadge(float $stok): string {
         return $stok < 10 ? 'stock-badge' : 'stock-badge success';
     }
 
-    /**
-     * Helper: Format Rupiah
-     */
+    //Helper: Format Rupiah
     public function formatRupiah(float $amount): string {
         return 'Rp ' . number_format($amount, 0, ',', '.');
     }
 
-    /**
-     * Helper: Format number with 1 decimal for kg
-     */
+    // Helper: Format number with 1 decimal for kg
     public function formatKg(float $amount): string {
         return number_format($amount, 1, ',', '.');
     }
 
-    /**
-     * Helper: Get chart colors array (JSON encoded for JS)
-     */
+    
     public function getChartColorsJson(): string {
         $colors = ['#2C1810', '#5D4037', '#A67C52', '#2E5D4F', '#A8D5BA', '#8D6E63', '#1B4D3E'];
         return json_encode($colors);
     }
 
-    /**
-     * Helper: Get chart labels JSON for JS
-     */
+    
     public function getChartLabelsJson(): string {
         return json_encode($this->chart_labels);
     }
 
-    /**
-     * Helper: Get chart data JSON for JS
-     */
+    
     public function getChartDataJson(): string {
         return json_encode($this->chart_data);
     }
 
-    /**
-     * Helper: Check if has sales data for chart
-     */
+    
     public function hasSalesData(): bool {
         return !empty($this->sales_data);
     }
 
-    /**
-     * Helper: Check if has coffee beans data
-     */
+    
     public function hasCoffeeBeans(): bool {
         return !empty($this->coffee_beans);
     }
 }
 
-// ✅ Inisialisasi Controller
+//  Inisialisasi Controller
 $manager = new ManagerDashboardController($conn);
 ?>
 <!DOCTYPE html>
@@ -155,12 +134,8 @@ $manager = new ManagerDashboardController($conn);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Manager - TEFA Coffee</title>
-
-    <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/dashboard.css">
 </head>
@@ -177,7 +152,7 @@ $manager = new ManagerDashboardController($conn);
                         onerror="this.src='https://via.placeholder.com/42x42/A67C52/FFFFFF?text=T'">
                     <span class="brand-text">TEFA COFFEE</span>
                 </div>
-                <!-- 🆕 Hamburger Menu - RIGHT SIDE -->
+                <!--  Hamburger Menu - RIGHT SIDE -->
                 <button class="hamburger-btn" id="hamburgerBtn" aria-label="Toggle Menu">
                     <i class="fas fa-bars"></i>
                 </button>

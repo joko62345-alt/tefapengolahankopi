@@ -1,10 +1,6 @@
-/**
- * TEFA Coffee - Premium Styling
- * Based on Reference Design
- */
+
 
 :root {
-    /* Color Palette from Reference */
     --coffee-darkest: #1A0F0A;
     --coffee-dark: #2C1810;
     --coffee-medium: #4A2C2A;
@@ -39,7 +35,6 @@ body {
 }
 
 /* ========== NAVBAR ========== */
-/* ========== NAVBAR IMPROVEMENTS ========== */
 .navbar-premium {
     background: linear-gradient(135deg, rgba(44,24,16,0.98) 0%, rgba(74,44,42,0.95) 100%) !important;
     backdrop-filter: blur(15px);
@@ -67,7 +62,6 @@ body {
 .brand-logo {
     height: 45px;
     width: auto;
-    /* ❌ HAPUS INI: filter: brightness(0) invert(1); */
     transition: all 0.3s;
     object-fit: contain;
 }

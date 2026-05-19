@@ -1,15 +1,6 @@
 <?php
-// ============================================================================
-// ANALYTICS.PHP - Single File OOP Version
-// TEFA COFFEE - Analytics Dashboard System
-// ============================================================================
-
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
-
-// ============================================================================
-// BASE ANALYTICS CLASS
-// ============================================================================
 
 abstract class BaseAnalytics
 {
@@ -78,9 +69,8 @@ abstract class BaseAnalytics
     }
 }
 
-// ============================================================================
+
 // CONCRETE ANALYTICS CLASSES
-// ============================================================================
 
 class SalesAnalytics extends BaseAnalytics
 {
@@ -310,9 +300,6 @@ class AnalyticsManager
     public function getDateTo(): string { return $this->dateTo; }
 }
 
-// ============================================================================
-// MAIN APPLICATION LOGIC
-// ============================================================================
 
 require_once '../config/config.php';
 checkRole('manager');

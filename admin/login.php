@@ -1,10 +1,5 @@
 <?php
 require_once '../config/config.php';
-
-/**
- * Class StaffLogin
- * Menangani autentikasi staff (admin & manager) dengan pendekatan OOP
- */
 class StaffLogin {
     private $conn;
     private $error;
@@ -146,17 +141,13 @@ $error = $staffLogin->getError();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Staff Login - TEFA Coffee Internal</title>
-
-    <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/login.css">
 </head>
-
 <body>
+
     <div class="login-container">
         <!-- Left Side - Login Form -->
         <div class="login-left">
@@ -201,7 +192,7 @@ $error = $staffLogin->getError();
             </div>
         </div>
 
-        <!-- Right Side - Welcome Section WITH CIRCLES -->
+        <!-- Right Side  -->
         <div class="login-right">
             <!-- Decorative Circles -->
             <div class="circle circle-1"></div>

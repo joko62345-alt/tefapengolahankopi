@@ -1,13 +1,10 @@
 
         :root {
-            /* === COLOR SYSTEM - COFFEE & NATURE THEME === */
             --text-primary: #1a1a1a;
             --text-secondary: #3d3d3d;
             --text-muted: #5a5a5a;
             --text-white: #ffffff;
             --text-on-dark: #f8f5f0;
-
-            /* 🎨 Coffee Brand Colors */
             --coffee-dark: #2C1810;
             --coffee-deep: #3E2723;
             --coffee-medium: #5D4037;
@@ -16,15 +13,11 @@
             --coffee-gold-light: #C9A961;
             --coffee-cream: #F5E9D7;
             --coffee-cream-light: #FFF9F0;
-
-            /* 🌿 Coffee Leaf Green Colors */
             --leaf-dark: #1B4D3E;
             --leaf-medium: #2E5D4F;
             --leaf-light: #5A8A74;
             --leaf-bright: #A8D5BA;
             --leaf-pale: #D4E8D9;
-
-            /* Semantic Colors */
             --success-bg: var(--leaf-pale);
             --success-text: var(--leaf-dark);
             --success-border: var(--leaf-light);
@@ -36,8 +29,6 @@
             --danger-border: #ef9a9a;
             --info-bg: var(--coffee-cream-light);
             --info-text: var(--coffee-deep);
-
-            /* Backgrounds & Borders - SIDEBAR DIFFERENT FROM CONTENT */
             --bg-page: #FAF8F5;
             --bg-content: #FAF8F5;
             --bg-sidebar: #1A120B;
@@ -47,8 +38,6 @@
             --border-medium: #d4c8b5;
             --border-accent: var(--coffee-gold);
             --border-dark: #b8b0a5;
-
-            /* Chart Colors */
             --chart-1: var(--coffee-dark);
             --chart-2: var(--coffee-medium);
             --chart-3: var(--coffee-gold);
@@ -56,13 +45,9 @@
             --chart-5: var(--leaf-bright);
             --chart-6: var(--coffee-light);
             --chart-7: var(--leaf-dark);
-
-            /* Shadows */
             --shadow-soft: 0 4px 20px rgba(44, 24, 16, 0.08);
             --shadow-hover: 0 12px 40px rgba(44, 24, 16, 0.15);
             --shadow-accent: 0 6px 24px rgba(27, 77, 62, 0.12);
-
-            /* Layout */
             --sidebar-width: 260px;
             --header-height: 70px;
         }
@@ -138,7 +123,7 @@
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
 
-        /* ========== HAMBURGER MENU - RIGHT SIDE ========== */
+        /*  HAMBURGER MENU  */
         .hamburger-btn {
             display: none;
             background: rgba(255, 255, 255, 0.15);
@@ -156,7 +141,7 @@
             transform: scale(1.05);
         }
 
-        /* ========== SIDEBAR - FIXED & DIFFERENT COLOR ========== */
+        /* SIDEBAR  */
         .sidebar {
             background: var(--bg-sidebar);
             width: var(--sidebar-width);
@@ -846,9 +831,6 @@
             }
 
             @media (max-width: 768px) {
-                /* ... existing code ... */
-
-                /* ✅ FIX: Table mobile layout */
                 .table-custom tbody td {
                     display: flex;
                     justify-content: space-between;
@@ -859,13 +841,9 @@
                     border-right: none;
                     font-size: 0.88rem;
                     word-wrap: break-word;
-                    /* ✅ Break long words */
                     overflow-wrap: break-word;
-                    /* ✅ Modern browsers */
                     max-width: 100%;
-                    /* ✅ Prevent overflow */
                     text-align: right;
-                    /* ✅ Align text properly */
                 }
 
                 .table-custom tbody td::before {
@@ -877,23 +855,18 @@
                     letter-spacing: 0.3px;
                     margin-right: 0.85rem;
                     flex-shrink: 0;
-                    /* ✅ Prevent label from shrinking */
                     min-width: 100px;
-                    /* ✅ Give label minimum space */
                     text-align: left;
-                    /* ✅ Label align left */
                 }
 
-                /* ✅ FIX: Handle long text in cells */
+                /*  FIX: Handle long text in cells */
                 .table-custom td.fw-semibold {
                     word-break: break-word;
-                    /* ✅ Break long product names */
                     font-size: 0.85rem;
                     text-align: left;
-                    /* ✅ Align left for product names */
                 }
 
-                /* ✅ FIX: Badge responsive */
+                /*  FIX: Badge responsive */
                 .badge-custom {
                     font-size: 0.75rem;
                     padding: 0.3rem 0.6rem;
@@ -903,14 +876,14 @@
                     white-space: nowrap;
                 }
 
-                /* ✅ FIX: Price text */
+                /*  FIX: Price text */
                 .text-rupiah {
                     font-size: 0.9rem;
                     word-break: keep-all;
                     text-align: right;
                 }
 
-                /* ✅ FIX: Progress wrapper mobile */
+                /*  FIX: Progress wrapper mobile */
                 .progress-wrapper {
                     flex-direction: column;
                     align-items: flex-start;

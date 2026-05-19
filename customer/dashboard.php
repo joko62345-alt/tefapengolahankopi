@@ -551,7 +551,7 @@ while ($p = mysqli_fetch_assoc($prod_query)) {
         // Initialize cart from PHP session
         let cart = <?= json_encode($_SESSION['cart'] ?? []) ?>;
 
-        // ✅ Professional Rupiah Formatter (Monospace-friendly)
+        // Rupiah Formatter 
         function formatRupiahPro(amount) {
             return new Intl.NumberFormat('id-ID', {
                 style: 'currency',

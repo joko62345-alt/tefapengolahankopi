@@ -64,7 +64,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <div class="register-card">
         <div class="card-brand">
             <div class=>
-                <i class=></i>
             </div>
             <h1 class="brand-title">Daftar Akun</h1>
             <p class="brand-subtitle">Lengkapi data untuk mulai belanja</p>
@@ -100,7 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 <!-- Name -->
                 <div class="mb-2">
                     <label class="form-label" for="nama">
-                        <i class="fas fa-id-card"></i>Nama <span class="required">*</span>
+                        <i class="fas fa-id-card"></i>Nama Lengkap <span class="required">*</span>
                     </label>
                     <input type="text" id="nama" name="nama" class="form-control" placeholder=" masukkan nama lengkap anda"
                         value="<?= htmlspecialchars($_POST['nama'] ?? '') ?>" required autocomplete="name">

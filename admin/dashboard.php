@@ -370,7 +370,7 @@ $dashboard = new DashboardController($conn);
                             <?php endif; ?>
                         </div>
                     </div>
-                    <!-- Quick Actions -->
+                    <!-- aksi cepat -->
                     <div class="quick-actions">
                         <div class="quick-actions-title">
                             <span>Aksi Cepat</span>

@@ -1,17 +1,12 @@
 <?php
-// admin/stock.php - OOP Single File Version
-
 require_once '../config/config.php';
 checkRole('admin');
 
-/**
- * StockController - Mengelola semua logika stok biji kopi admin
- */
 class StockController {
     private $conn;
     //  Public properties untuk akses di view
     public $success = '';
-    public $error = '';  //  TAMBAHKAN INI!
+    public $error = '';  
     public $print_mode = false;
     
     
@@ -40,9 +35,8 @@ class StockController {
         $this->loadData();
     }
 
-    /**
-     * Handle POST requests (Add Stock Movement)
-     */
+    // Handle POST requests (Add Stock Movement)
+     
     private function handleRequests(): void {
         if ($this->print_mode) return;
 
@@ -51,11 +45,8 @@ class StockController {
         }
     }
 
-    
-
-    /**
-     * Load filter parameters dari GET
-     */
+    // Load filter parameters dari GET
+     
     private function loadFilters(): void {
         $this->filter_bean = $_GET['filter_bean'] ?? '';
         $this->filter_jenis = $_GET['filter_jenis'] ?? '';
@@ -95,7 +86,7 @@ class StockController {
         $current_stock = 0;
     }
 
-    // 🚨 VALIDASI: Cek stok keluar
+    //  VALIDASI: Cek stok keluar
     if ($jenis == 'keluar' && $jumlah > $current_stock) {
         $this->error = "
             <div class='alert-content'>
@@ -140,7 +131,7 @@ class StockController {
         return;
     }
 
-    // ✅ SUCCESS
+    //  SUCCESS
     $action_text = ($jenis == 'masuk') ? 'ditambahkan' : 'dikurangi';
     $this->success = "
         <div class='alert-content'>
@@ -186,9 +177,8 @@ class StockController {
         return $where;
     }
 
-    /**
-     * Load semua data yang dibutuhkan view
-     */
+    //Load semua data yang dibutuhkan view
+     
     private function loadData(): void {
         // 🔹 Load movements dengan filter
         $where = $this->buildMovementsWhereClause();
@@ -206,7 +196,7 @@ class StockController {
             $this->all_movements[] = $row;
         }
 
-        // 🔹 Calculate totals for print report
+        //  Calculate totals for print report
         foreach ($this->all_movements as $m) {
             if ($m['jenis'] == 'masuk') {
                 $this->total_masuk += $m['jumlah'];
@@ -215,7 +205,7 @@ class StockController {
             }
         }
 
-        // 🔹 Bean name for report
+        //  Bean name for report
         if ($this->filter_bean) {
             $b = mysqli_fetch_assoc(mysqli_query($this->conn, 
                 "SELECT nama_biji_kopi FROM coffee_beans WHERE id = " . (int) $this->filter_bean));
@@ -224,7 +214,7 @@ class StockController {
             }
         }
 
-        // 🔹 Period text for report
+        //  Period text for report
         if ($this->filter_date_from && $this->filter_date_to) {
             $this->period_text = date('d M Y', strtotime($this->filter_date_from)) . ' - ' . date('d M Y', strtotime($this->filter_date_to));
         } elseif ($this->filter_date_from) {
@@ -235,12 +225,12 @@ class StockController {
             $this->period_text = 'Semua Periode';
         }
 
-        // 🔹 Jenis text
+        //  Jenis text
         if ($this->filter_jenis) {
             $this->jenis_text = ' | Jenis: ' . ucfirst($this->filter_jenis);
         }
 
-        // 🔹 Coffee beans for dropdowns and info list
+        //  Coffee beans for dropdowns and info list
         $beans_query = mysqli_query($this->conn, "SELECT * FROM coffee_beans ORDER BY nama_biji_kopi ASC");
         while ($bean = mysqli_fetch_assoc($beans_query)) {
             $this->coffee_beans[] = $bean;
@@ -252,72 +242,53 @@ class StockController {
         }
     }
 
-    /**
-     * Helper: Get badge class based on movement type
-     */
+    //Helper: Get badge class based on movement type
+     
     public function getMovementBadge(string $jenis): string {
         return $jenis == 'masuk' ? 'badge-success' : 'badge-danger';
     }
 
-    /**
-     * Helper: Get icon for movement type
-     */
+    //Helper: Get icon for movement type
     public function getMovementIcon(string $jenis): string {
         return $jenis == 'masuk' ? 'arrow-down' : 'arrow-up';
     }
 
-    /**
-     * Helper: Get sign for movement
-     */
+    //Helper: Get sign for movement
     public function getMovementSign(string $jenis): string {
         return $jenis == 'masuk' ? '+' : '-';
     }
 
-    /**
-     * Helper: Get text color for movement
-     */
+    //Helper: Get text color for movement
     public function getMovementTextColor(string $jenis): string {
         return $jenis == 'masuk' ? 'text-success' : 'text-danger';
     }
 
-    /**
-     * Helper: Get badge class based on stock level
-     */
+    //Helper: Get badge class based on stock level
     public function getStockBadge(float $stok): string {
         return $stok < 5 ? 'badge-danger' : 'badge-success';
     }
 
-    /**
-     * Helper: Format tanggal
-     */
+    //Helper: Format tanggal
     public function formatDate(string $datetime, string $format = 'd/m/Y H:i'): string {
         return date($format, strtotime($datetime));
     }
 
-    /**
-     * Helper: Format tanggal untuk print (d M Y H:i)
-     */
+    
     public function formatDatePrint(string $datetime): string {
         return date('d M Y H:i', strtotime($datetime));
     }
 
-    /**
-     * Helper: Format angka dengan 1 desimal
-     */
+    //Helper: Format angka dengan 1 desimal
     public function formatNumber(float $number): string {
         return number_format($number, 1, ',', '.');
     }
 
-    /**
-     * Helper: Get current admin name for signature
-     */
+    //Helper: Get current admin name for signature
     public function getCurrentAdminName(): string {
         return htmlspecialchars($_SESSION['nama'] ?? $_SESSION['username'] ?? 'Admin');
     }
 
-    /**
-     * Render print view
-     */
+    //Render print view
     public function renderPrintView(): void {
         ?>
         <!DOCTYPE html>
@@ -463,11 +434,8 @@ if ($stock->print_mode) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stok Biji Kopi - TEFA Coffee</title>
-    <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/stock.css">
 </head>
@@ -512,22 +480,21 @@ if ($stock->print_mode) {
             </div>
 
             <!-- Alert -->
-            
-<?php if ($stock->success): ?>
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        <i class="fas fa-check-circle"></i>
-        <?= $stock->success ?>
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-<?php endif; ?>
+            <?php if ($stock->success): ?>
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fas fa-check-circle"></i>
+                    <?= $stock->success ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            <?php endif; ?>
 
-<?php if ($stock->error): ?>
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        <i class="fas fa-exclamation-circle"></i>
-        <?= $stock->error ?>
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-<?php endif; ?>
+            <?php if ($stock->error): ?>
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <?= $stock->error ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            <?php endif; ?>
             <div class="row">
                 <!-- Form Input Stok Biji Kopi -->
                 <div class="col-md-4 mb-4">

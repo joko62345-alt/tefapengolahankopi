@@ -56,7 +56,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <link rel="stylesheet" href="css/login.css">
 </head>
 <body>
-    <!-- Login Card - COMPACT -->
     <div class="login-card">
         <!-- Brand Header -->
         <div class="card-brand">
@@ -128,5 +127,4 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <script src="js/login.js"></script>
    
 </body>
-
 </html>

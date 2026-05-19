@@ -1,7 +1,3 @@
-/**
- * TEFA Coffee - Main JavaScript
- * Bootstrap 5 Interactive Features
- */
 
 document.addEventListener('DOMContentLoaded', function() {
     
@@ -160,7 +156,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return new bootstrap.Popover(popoverTriggerEl);
     });
     
-    console.log('✅ TEFA Coffee - JavaScript Loaded Successfully');
+    console.log(' TEFA Coffee - JavaScript Loaded Successfully');
 });
 
 // ========== UTILITY FUNCTIONS ==========
@@ -198,10 +194,6 @@ function scrollToTop() {
         behavior: 'smooth'
     });
 }
-
-/* =========================================
-   PREMIUM ENHANCEMENT JS V2
-========================================= */
 
 // Scroll Progress Bar
 const progressBar = document.createElement("div");

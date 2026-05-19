@@ -66,7 +66,7 @@
                 pickupStatusEl.innerHTML = '✓ SUDAH DIAMBIL';
                 pickupInfoEl.innerHTML = formatDateIndonesia(data.tanggal_diambil) + '<br>Oleh: ' + data.diambil_oleh;
             } else {
-                pickupStatusEl.innerHTML = '⏳ BELUM DIAMBIL';
+                pickupStatusEl.innerHTML = ' BELUM DIAMBIL';
                 pickupInfoEl.innerHTML = 'Tunjukkan struk ini ke admin saat ambil';
             }
 
@@ -172,7 +172,7 @@
                 updateActiveFilters(dateFrom, dateTo, pembayaran, pengambilan, customer);
             }
         });
-   // 🖨️ Fungsi Cetak ke Thermal Printer
+   //  Fungsi Cetak ke Thermal Printer
 function printModalReceipt() {
     // Tambahkan class print-mode ke body untuk trigger CSS @media print
     document.body.classList.add('printing');
@@ -189,7 +189,7 @@ function printModalReceipt() {
     }, 1000);
 }
 
-// 🔥 Alternative: Direct print tanpa dialog (hanya untuk browser yang support)
+//  Alternative: Direct print tanpa dialog (hanya untuk browser yang support)
 function printModalReceiptDirect() {
     const printWindow = window.open('', '_blank', 'width=320,height=600');
     const receiptContent = document.querySelector('.receipt-modal-body').innerHTML;

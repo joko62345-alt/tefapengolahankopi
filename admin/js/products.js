@@ -47,7 +47,7 @@
         const setValue = (elementId, value) => {
             const el = document.getElementById(elementId);
             if (el) el.value = value ?? '';
-            else console.warn(`⚠️ Element #${elementId} not found`);
+            else console.warn(` Element #${elementId} not found`);
         };
 
         const setText = (elementId, text) => {
@@ -66,7 +66,7 @@
         setValue('edit_deskripsi', deskripsi);
         setValue('edit_harga', harga);
         setValue('edit_stok_display', stok);
-        setValue('edit_kategori', kategori); // ✅ input text, bukan select
+        setValue('edit_kategori', kategori); // 
         setValue('edit_gambar_lama', gambar);
         
         // Reset stok adjustments
@@ -94,9 +94,9 @@
         const previewEdit = document.getElementById('previewEdit');
         if (previewEdit) previewEdit.src = '';
 
-        // ✅ Pastikan Bootstrap sudah load sebelum bikin modal
+        //  Pastikan Bootstrap sudah load sebelum bikin modal
         if (typeof bootstrap === 'undefined' || !bootstrap.Modal) {
-            console.error('❌ Bootstrap.Modal not ready yet!');
+            console.error(' Bootstrap.Modal not ready yet!');
             // Fallback: reload halaman dengan hash untuk buka modal
             window.location.hash = `#edit-${id}`;
             return;
@@ -104,7 +104,7 @@
 
         const modalEl = document.getElementById('editModal');
         if (!modalEl) {
-            console.error('❌ Modal element #editModal not found!');
+            console.error(' Modal element #editModal not found!');
             return;
         }
 

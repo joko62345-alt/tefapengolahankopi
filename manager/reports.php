@@ -98,10 +98,6 @@ abstract class AbstractReport implements ReportInterface
     protected function formatNumber(float $num, int $decimals = 0): string { return number_format($num, $decimals, ',', '.'); }
 }
 
-// ============================================================================
-// CONCRETE REPORT CLASSES
-// ============================================================================
-
 class SalesReport extends AbstractReport
 {
     protected function loadData(): void
@@ -463,9 +459,6 @@ class InventoryReport extends AbstractReport
     protected function getTotalCount(): int { return $this->summary['total_items']; }
 }
 
-// ============================================================================
-// FACTORY PATTERN
-// ============================================================================
 
 class ReportFactory
 {
@@ -487,16 +480,13 @@ class ReportFactory
     public static function isValidType(string $type): bool { return isset(self::REPORT_TYPES[$type]); }
 }
 
-// ============================================================================
-// MAIN APPLICATION LOGIC
-// ============================================================================
 
 require_once '../config/config.php';
 checkRole('manager');
 
 $printMode = isset($_GET['print']) && $_GET['print'] === '1';
 
-// ✅ VALIDASI TANGGAL - TAMBAHAN FIX
+// VALIDASI TANGGAL - TAMBAHAN FIX
 function validateDate($date, $default) {
     if (empty($date) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
         return $default;
@@ -535,9 +525,7 @@ if ($reportType === 'beans_history') {
     while ($row = $result->fetch_assoc()) $beansList[] = $row;
 }
 
-// ============================================================================
-// PRINT MODE OUTPUT
-// ============================================================================
+
 if ($printMode): ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -614,7 +602,7 @@ if ($printMode): ?>
         </div>
 
         <?php if(!in_array($reportType,['inventory','beans_history'])): ?>
-        <!-- ✅ FILTER CARD DIPERBAIKI: Tambah onchange + tombol submit -->
+        <!-- FILTER CARD DIPERBAIKI: Tambah onchange + tombol submit -->
         <div class="filter-card no-print">
             <form method="GET" class="row g-3" id="dateFilterForm">
                 <input type="hidden" name="type" value="<?= htmlspecialchars($reportType) ?>">

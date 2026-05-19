@@ -1,12 +1,10 @@
 
         :root {
-            /* === COLOR SYSTEM - COFFEE & NATURE THEME === */
             --text-primary: #1a1a1a;
             --text-secondary: #3d3d3d;
             --text-muted: #5a5a5a;
             --text-white: #ffffff;
             --text-on-dark: #f8f5f0;
-            /* 🎨 Coffee Brand Colors */
             --coffee-dark: #2C1810;
             --coffee-deep: #3E2723;
             --coffee-medium: #5D4037;
@@ -15,13 +13,11 @@
             --coffee-gold-light: #C9A961;
             --coffee-cream: #F5E9D7;
             --coffee-cream-light: #FFF9F0;
-            /* 🌿 Coffee Leaf Green Colors */
             --leaf-dark: #1B4D3E;
             --leaf-medium: #2E5D4F;
             --leaf-light: #5A8A74;
             --leaf-bright: #A8D5BA;
             --leaf-pale: #D4E8D9;
-            /* Semantic Colors */
             --success-bg: var(--leaf-pale);
             --success-text: var(--leaf-dark);
             --success-border: var(--leaf-light);
@@ -33,7 +29,6 @@
             --danger-border: #ef9a9a;
             --info-bg: var(--coffee-cream-light);
             --info-text: var(--coffee-deep);
-            /* Backgrounds & Borders - SIDEBAR DIFFERENT FROM CONTENT */
             --bg-page: #FAF8F5;
             --bg-content: #FAF8F5;
             --bg-sidebar: #1A120B;
@@ -43,7 +38,6 @@
             --border-medium: #d4c8b5;
             --border-accent: var(--coffee-gold);
             --border-dark: #b8b0a5;
-            /* Chart Colors */
             --chart-1: var(--coffee-dark);
             --chart-2: var(--coffee-medium);
             --chart-3: var(--coffee-gold);
@@ -51,11 +45,9 @@
             --chart-5: var(--leaf-bright);
             --chart-6: var(--coffee-light);
             --chart-7: var(--leaf-dark);
-            /* Shadows */
             --shadow-soft: 0 4px 20px rgba(44, 24, 16, 0.08);
             --shadow-hover: 0 12px 40px rgba(44, 24, 16, 0.15);
             --shadow-accent: 0 6px 24px rgba(27, 77, 62, 0.12);
-            /* Layout */
             --sidebar-width: 260px;
             --header-height: 70px;
         }
@@ -965,24 +957,4 @@
             }
         }
 
-        /* ========== DECORATIVE ELEMENTS ========== */
-        .coffee-bean-decoration {
-            position: absolute;
-            opacity: 0.04;
-            font-size: 8rem;
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        .coffee-bean-1 {
-            top: 15%;
-            right: 5%;
-            transform: rotate(-15deg);
-        }
-
-        .coffee-bean-2 {
-            bottom: 10%;
-            left: 3%;
-            transform: rotate(10deg);
-        }
-  
+    

@@ -1,6 +1,5 @@
 
         :root {
-            /* Coffee Brand Colors - TEFA Coffee */
             --coffee-dark: #2C1810;
             --coffee-deep: #3E2723;
             --coffee-medium: #5D4037;
@@ -9,22 +8,15 @@
             --coffee-gold-light: #C9A961;
             --coffee-cream: #F5E9D7;
             --coffee-cream-light: #FFF9F0;
-
-            /* Green Accent - TEFA */
             --leaf-dark: #1B4D3E;
             --leaf-medium: #2E5D4F;
             --leaf-light: #5A8A74;
             --leaf-pale: #D4E8D9;
-
-            /* Text Colors */
             --text-primary: #1a1a1a;
             --text-secondary: #4a4a4a;
             --text-muted: #6b7280;
             --text-white: #ffffff;
 
-            /* Gradient Coffee */
-            --gradient-coffee: linear-gradient(135deg, var(--coffee-dark) 0%, var(--coffee-medium) 50%, var(--leaf-dark) 100%);
-            --gradient-cream: linear-gradient(135deg, var(--coffee-cream) 0%, var(--coffee-cream-light) 100%);
         }
 
         * {

@@ -81,7 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 </div>
             <?php endif; ?>
 
-            <!-- Form  Tambahkan ID -->
+            <!-- Form -->
             <form method="POST" action="" id="profileForm">
                 <!-- Nama Lengkap -->
                 <div class="form-group">

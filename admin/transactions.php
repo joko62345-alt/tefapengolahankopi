@@ -1,16 +1,11 @@
 <?php
-// admin/transactions.php - OOP Single File Version
-
 require_once '../config/config.php';
 checkRole('admin');
 
-/**
- * TransactionsController - Mengelola semua logika transaksi admin
- */
 class TransactionsController {
     private $conn;
     
-    // ✅ Public properties untuk akses di view
+    //  Public properties untuk akses di view
     public $success = '';
     public $error = '';
     public $print_mode = false;
@@ -40,23 +35,21 @@ class TransactionsController {
         $this->loadData();
     }
 
-    /**
-     * Handle semua GET requests (Actions)
-     */
+    
     private function handleRequests(): void {
         if ($this->print_mode) return;
 
-        // 🔹 Konfirmasi Pembayaran
+        // Konfirmasi Pembayaran
         if (isset($_GET['confirm_payment'])) {
             $this->confirmPayment();
         }
         
-        // 🔹 Konfirmasi Produk Sudah Diambil
+        //  Konfirmasi Produk Sudah Diambil
         if (isset($_GET['confirm_pickup'])) {
             $this->confirmPickup();
         }
         
-        // 🔹 Batal Konfirmasi Pengambilan (Undo)
+        //  Batal Konfirmasi Pengambilan (Undo)
         if (isset($_GET['undo_pickup'])) {
             $this->undoPickup();
         }
@@ -96,7 +89,7 @@ class TransactionsController {
                 $update->bind_param("ii", $row['quantity'], $row['product_id']);
                 $update->execute();
                 
-                // ✅ 2. TAMBAHAN: Catat ke stock_movements
+                //  2. TAMBAHAN: Catat ke stock_movements
                 $keterangan = "Penjualan $kode_transaksi";
                 $insert_movement = $this->conn->prepare("INSERT INTO stock_movements (product_id, jenis, jumlah, keterangan) VALUES (?, 'keluar', ?, ?)");
                 $insert_movement->bind_param("iis", $row['product_id'], $row['quantity'], $keterangan);
@@ -121,9 +114,7 @@ class TransactionsController {
         }
     }
 
-    /**
-     * Load filter parameters dari GET
-     */
+    //Load filter parameters dari GET
     private function loadFilters(): void {
         $this->filter_date_from = $_GET['filter_date_from'] ?? '';
         $this->filter_date_to = $_GET['filter_date_to'] ?? '';
@@ -131,9 +122,7 @@ class TransactionsController {
         $this->filter_customer = $_GET['filter_customer'] ?? '';
     }
 
-    /**
-     * Build WHERE clause untuk filter transactions
-     */
+    //Build WHERE clause untuk filter transactions
     private function buildTransactionsWhereClause(): string {
         $where = "1=1";
         
@@ -154,11 +143,9 @@ class TransactionsController {
         return $where;
     }
 
-    /**
-     * Load semua data yang dibutuhkan view
-     */
+    //Load semua data yang dibutuhkan view
     private function loadData(): void {
-        // 🔹 Load transactions dengan filter
+        //  Load transactions dengan filter
         $where = $this->buildTransactionsWhereClause();
         $transactions_query = mysqli_query($this->conn, "
             SELECT t.*, u.nama_lengkap, u.telepon, u.alamat
@@ -174,7 +161,7 @@ class TransactionsController {
             $this->all_transactions[] = $row;
         }
 
-        // 🔹 Calculate totals for print report
+        //  Calculate totals for print report
         $this->total_transaksi = count($this->all_transactions);
         foreach ($this->all_transactions as $t) {
             if (in_array($t['status_pembayaran'], ['lunas', 'dikonfirmasi'])) {
@@ -185,7 +172,7 @@ class TransactionsController {
             }
         }
 
-        // 🔹 Period text for report
+        //  Period text for report
         if ($this->filter_date_from && $this->filter_date_to) {
             $this->period_text = date('d M Y', strtotime($this->filter_date_from)) . ' - ' . date('d M Y', strtotime($this->filter_date_to));
         } elseif ($this->filter_date_from) {
@@ -196,7 +183,7 @@ class TransactionsController {
             $this->period_text = 'Semua Periode';
         }
 
-        // 🔹 Filter texts
+        //  Filter texts
         if ($this->filter_pengambilan) {
             $this->pengambilan_text = ' | Pengambilan: ' . ucfirst(str_replace('_', ' ', $this->filter_pengambilan));
         }
@@ -204,7 +191,7 @@ class TransactionsController {
             $this->customer_text = ' | Customer: ' . ucfirst($this->filter_customer);
         }
 
-        // 🔹 Stats for cards
+        //  Stats for cards
         $this->stats_transaksi = [
             'total' => mysqli_fetch_assoc(mysqli_query($this->conn, "SELECT COUNT(*) as total FROM transactions"))['total'] ?? 0,
             'pendapatan' => mysqli_fetch_assoc(mysqli_query($this->conn, "SELECT SUM(total_harga) as total FROM transactions WHERE status_pembayaran IN ('lunas','dikonfirmasi')"))['total'] ?? 0,
@@ -213,9 +200,7 @@ class TransactionsController {
         ];
     }
 
-    /**
-     * Helper: Get badge class for payment status
-     */
+    //Helper: Get badge class for payment status
     public function getPaymentBadge(string $status): string {
         return match ($status) {
             'lunas' => 'badge-success',
@@ -224,9 +209,7 @@ class TransactionsController {
         };
     }
 
-    /**
-     * Helper: Get payment status label
-     */
+    //Helper: Get payment status label
     public function getPaymentLabel(string $status): string {
         return match ($status) {
             'lunas', 'dikonfirmasi' => 'Lunas',
@@ -234,58 +217,42 @@ class TransactionsController {
         };
     }
 
-    /**
-     * Helper: Get badge class for pickup status
-     */
+    //Helper: Get badge class for pickup status
     public function getPickupBadge(string $status): string {
         return $status == 'sudah_diambil' ? 'badge-success' : 'badge-warning';
     }
 
-    /**
-     * Helper: Get pickup status label
-     */
+    //Helper: Get pickup status label
     public function getPickupLabel(string $status): string {
         return $status == 'sudah_diambil' ? 'Sudah' : 'Belum';
     }
 
-    /**
-     * Helper: Format tanggal
-     */
+    //Helper: Format tanggal
     public function formatDate(string $datetime, string $format = 'd/m/Y H:i'): string {
         return date($format, strtotime($datetime));
     }
 
-    /**
-     * Helper: Format tanggal untuk print (d M Y H:i)
-     */
+    //Helper: Format tanggal untuk print (d M Y H:i)
     public function formatDatePrint(string $datetime): string {
         return date('d M Y H:i', strtotime($datetime));
     }
 
-    /**
-     * Helper: Format Rupiah
-     */
+    // Helper: Format Rupiah
     public function formatRupiah(float $amount): string {
         return 'Rp ' . number_format($amount, 0, ',', '.');
     }
 
-    /**
-     * Helper: Format angka biasa
-     */
+    //Helper: Format angka biasa
     public function formatNumber(float $amount): string {
         return number_format($amount, 0, ',', '.');
     }
 
-    /**
-     * Helper: Get current admin name for signature
-     */
+    //Helper: Get current admin name for signature
     public function getCurrentAdminName(): string {
         return htmlspecialchars($_SESSION['nama'] ?? $_SESSION['username'] ?? 'Admin');
     }
 
-    /**
-     * Render print view
-     */
+    
     public function renderPrintView(): void {
         ?>
         <!DOCTYPE html>
@@ -427,10 +394,10 @@ class TransactionsController {
     }
 }
 
-// ✅ Inisialisasi Controller
+//  Inisialisasi Controller
 $transactions = new TransactionsController($conn);
 
-// ✅ Render print view jika mode print
+//  Render print view jika mode print
 if ($transactions->print_mode) {
     $transactions->renderPrintView();
 }
@@ -657,7 +624,7 @@ if ($transactions->print_mode) {
         </div>
     </div>
 
-    <!-- Detail Modal - Flat Clean -->
+    <!-- Detail Modal  -->
     <div class="modal fade" id="detailModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content">
@@ -678,7 +645,7 @@ if ($transactions->print_mode) {
         </div>
     </div>
 
-    <!-- ✅ RECEIPT MODAL - SAMA PERSIS DENGAN CUSTOMER/DASHBOARD.PHP -->
+    <!--  RECEIPT MODAL  -->
     <div class="modal fade" id="receiptModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content receipt-modal-content">
@@ -800,7 +767,7 @@ if ($transactions->print_mode) {
                 pickupStatusEl.innerHTML = '✓ SUDAH DIAMBIL';
                 pickupInfoEl.innerHTML = formatDateIndonesia(data.tanggal_diambil) + '<br>Oleh: ' + data.diambil_oleh;
             } else {
-                pickupStatusEl.innerHTML = '⏳ BELUM DIAMBIL';
+                pickupStatusEl.innerHTML = ' BELUM DIAMBIL';
                 pickupInfoEl.innerHTML = 'Tunjukkan struk ini ke admin saat ambil';
             }
 

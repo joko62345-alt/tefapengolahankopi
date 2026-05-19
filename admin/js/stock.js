@@ -110,7 +110,7 @@ function validateStockOut() {
                 const availableStock = parseFloat(data.stok) || 0;
                 
                 if (jumlah > availableStock) {
-                    alert(`⚠️ Stok tidak mencukupi!\n\n` +
+                    alert(` Stok tidak mencukupi!\n\n` +
                           `Biji Kopi: ${namaBiji}\n` +
                           `Stok tersedia: ${availableStock.toFixed(1)} kg\n` +
                           `Anda mencoba mengurangi: ${jumlah.toFixed(1)} kg\n\n` +
@@ -135,7 +135,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Untuk validasi instan tanpa AJAX, kita bisa tampilkan warning saja
                 const jumlah = parseFloat(document.querySelector('input[name="jumlah"]').value) || 0;
                 if (jumlah > 1000) { // Threshold warning (opsional)
-                    if (!confirm(`⚠️ Anda akan mengurangi stok sebanyak ${jumlah.toFixed(1)} kg.\n\nYakin ingin melanjutkan?`)) {
+                    if (!confirm(` Anda akan mengurangi stok sebanyak ${jumlah.toFixed(1)} kg.\n\nYakin ingin melanjutkan?`)) {
                         e.preventDefault();
                     }
                 }

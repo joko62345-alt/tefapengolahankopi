@@ -29,7 +29,7 @@ if (!$transaction) {
         exit;
     }
     die("<div style='text-align:center;padding:20px;font-family:Arial;'>
-            <h2>❌ Transaksi Tidak Ditemukan</h2>
+            <h2> Transaksi Tidak Ditemukan</h2>
             <a href='transactions.php'>Kembali</a>
          </div>");
 }
@@ -54,9 +54,8 @@ while ($item = mysqli_fetch_assoc($details)) {
     ];
 }
 
-// ============================================
 // JSON RESPONSE FOR MODAL (AJAX)
-// ============================================
+
 if (isset($_GET['format']) && $_GET['format'] === 'json') {
     header('Content-Type: application/json');
     echo json_encode([
@@ -75,9 +74,6 @@ if (isset($_GET['format']) && $_GET['format'] === 'json') {
     exit;
 }
 
-// ============================================
-// HTML RESPONSE FOR DIRECT ACCESS / PRINT
-// ============================================
 mysqli_data_seek($details, 0);
 ?>
 <!DOCTYPE html>
@@ -404,7 +400,7 @@ mysqli_data_seek($details, 0);
                 <div class="info"><?= date('d/m/Y H:i', strtotime($transaction['tanggal_diambil'] ?? 'now')) ?><br>Oleh:
                     <?= htmlspecialchars($transaction['diambil_oleh'] ?? '-') ?></div>
             <?php else: ?>
-                <div class="status pending">⏳ BELUM DIAMBIL</div>
+                <div class="status pending"> BELUM DIAMBIL</div>
                 <div class="info">Tunjukkan struk ini ke admin saat ambil</div>
             <?php endif; ?>
         </div>

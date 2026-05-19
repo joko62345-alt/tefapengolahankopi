@@ -143,9 +143,8 @@ class InventoryController {
         $this->filter_date_to = $_GET['filter_date_to'] ?? '';
     }
 
-    /**
-     * Build WHERE clause untuk filter usage history
-     */
+    // Build WHERE clause untuk filter usage history
+    
     private function buildUsageWhereClause(): string {
         $where = "1=1";
         
@@ -168,11 +167,10 @@ class InventoryController {
         return $where;
     }
 
-    /**
-     * Load semua data yang dibutuhkan view
-     */
+    // Load semua data yang dibutuhkan view
+     
     private function loadData(): void {
-        // 🔹 Load usage history dengan filter
+        //  Load usage history dengan filter
         $where_usage = $this->buildUsageWhereClause();
         $usage_history_query = mysqli_query($this->conn, "
             SELECT iu.*, inv.nama_barang, inv.kategori, inv.kondisi as kondisi_awal
@@ -262,9 +260,8 @@ class InventoryController {
         }
     }
 
-    /**
-     * Helper: Get badge class based on kondisi
-     */
+    //Helper: Get badge class based on kondisi
+    
     public function getKondisiBadge(string $kondisi): string {
         return match ($kondisi) {
             'Baik' => 'badge-success',
@@ -274,23 +271,20 @@ class InventoryController {
         };
     }
 
-    /**
-     * Helper: Format tanggal
-     */
+    // Format tanggal
+     
     public function formatDate(string $datetime, string $format = 'd/m/Y H:i'): string {
         return date($format, strtotime($datetime));
     }
 
-    /**
-     * Helper: Format tanggal pendek untuk print
-     */
+    //Format tanggal pendek untuk print
+     
     public function formatDateShort(string $datetime): string {
         return date('d M Y', strtotime($datetime));
     }
 
-    /**
-     * Helper: Get kondisi label untuk print report
-     */
+    // Get kondisi label untuk print report
+     
     public function getKondisiLabel(string $kondisi): string {
         return match ($kondisi) {
             'Baik' => 'Baik',
@@ -302,16 +296,14 @@ class InventoryController {
         };
     }
 
-    /**
-     * Helper: Get current admin name for signature
-     */
+    // Get current admin name for signature
+     
     public function getCurrentAdminName(): string {
         return htmlspecialchars($_SESSION['nama'] ?? $_SESSION['username'] ?? 'Admin');
     }
 
-    /**
-     * Render print view
-     */
+    // print view
+    
     public function renderPrintView(): void {
         ?>
         <!DOCTYPE html>
@@ -423,7 +415,7 @@ class InventoryController {
                 <div class="report-footer">
                     <div class="footer-section">
                         <h4>Mengetahui,</h4>
-                        <p>Kepala TEFA Coffee</p>
+                        <p>Manager TEFA Coffee</p>
                         <div class="signature-line"><strong>( ___________________ )</strong></div>
                     </div>
                     <div class="footer-section">
@@ -575,118 +567,113 @@ if ($inventory->print_mode) {
                 </div>
             <?php endif; ?>
 
-          
-
                 <!--  FORM TAMBAH INVENTARIS (Full Width) -->
-<div class="card-custom mb-4">
-    <div class="card-header-custom">
-        <span>Tambah Inventaris Baru</span>
-    </div>
-    <div class="card-body">
-        <form method="POST">
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <label class="form-label">Nama Barang/Peralatan</label>
-                    <input type="text" name="nama_barang" class="form-control" required placeholder="Contoh: Mesin Roaster">
+            <div class="card-custom mb-4">
+                <div class="card-header-custom">
+                    <span>Tambah Inventaris Baru</span>
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label">Kategori</label>
-                    <select name="kategori" class="form-control" required>
-                        <option value="">-- Pilih --</option>
-                        <option value="Mesin Roasting">Mesin Roasting</option>
-                        <option value="Mesin Grinding">Mesin Grinding</option>
-                        <option value="Alat Ukur">Alat Ukur</option>
-                        <option value="Penyimpanan">Penyimpanan</option>
-                        <option value="Lainnya">Lainnya</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Jumlah</label>
-                    <input type="number" name="jumlah" class="form-control" required min="1" value="1">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Kondisi Awal</label>
-                    <select name="kondisi" class="form-control" required>
-                        <option value="Baik">Baik</option>
-                        <option value="Cukup Baik">Cukup Baik</option>
-                        <option value="Rusak Ringan">Rusak Ringan</option>
-                        <option value="Rusak Berat">Rusak Berat</option>
-                        <option value="Dalam Perbaikan">Dalam Perbaikan</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Tanggal Pembelian</label>
-                    <input type="date" name="tanggal_pembelian" class="form-control" required>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Keterangan</label>
-                    <textarea name="keterangan" class="form-control" rows="2" placeholder="Merk, spesifikasi, dll"></textarea>
-                </div>
-                <div class="col-12">
-                    <button type="submit" name="add_inventory" class="btn-custom btn-primary">
-                        <i class="fas fa-save"></i> Simpan Inventaris
-                    </button>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Nama Barang/Peralatan</label>
+                                <input type="text" name="nama_barang" class="form-control" required placeholder="Contoh: Mesin Roaster">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Kategori</label>
+                                <select name="kategori" class="form-control" required>
+                                    <option value="">-- Pilih --</option>
+                                    <option value="Mesin Roasting">Mesin Roasting</option>
+                                    <option value="Mesin Grinding">Mesin Grinding</option>
+                                    <option value="Alat Ukur">Alat Ukur</option>
+                                    <option value="Penyimpanan">Penyimpanan</option>
+                                    <option value="Lainnya">Lainnya</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Jumlah</label>
+                                <input type="number" name="jumlah" class="form-control" required min="1" value="1">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Kondisi Awal</label>
+                                <select name="kondisi" class="form-control" required>
+                                    <option value="Baik">Baik</option>
+                                    <option value="Cukup Baik">Cukup Baik</option>
+                                    <option value="Rusak Ringan">Rusak Ringan</option>
+                                    <option value="Rusak Berat">Rusak Berat</option>
+                                    <option value="Dalam Perbaikan">Dalam Perbaikan</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Tanggal Pembelian</label>
+                                <input type="date" name="tanggal_pembelian" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Keterangan</label>
+                                <textarea name="keterangan" class="form-control" rows="2" placeholder="Merk, spesifikasi, dll"></textarea>
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" name="add_inventory" class="btn-custom btn-primary">
+                                    <i class="fas fa-save"></i> Simpan Inventaris
+                                </button>
+                            </div>
+                        </div>
+                    </form>
                 </div>
             </div>
-        </form>
-    </div>
-</div>
 
-<!--  DAFTAR INVENTARIS (Full Width - 1 Container) -->
-<div class="card-custom mb-4">
-    <div class="card-header-custom d-flex justify-content-between align-items-center">
-        <span>Daftar Inventaris</span>
-        <span class="badge bg-secondary"><?= mysqli_num_rows(mysqli_query($conn, "SELECT * FROM inventory")) ?> Item</span>
-    </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-custom inventory-table">
-                <thead>
-                    <tr>
-                        <th style="width: 5%;" class="text-center">NO</th>
-                        <th style="width: 25%;">NAMA BARANG</th>
-                        <th style="width: 20%;">KATEGORI</th>
-                        <th style="width: 10%;" class="text-center">JUMLAH</th>
-                        <th style="width: 15%;">KONDISI</th>
-                        <th style="width: 15%;">TANGGAL BELI</th>
-                        <th style="width: 10%;" class="text-end">AKSI</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php
-                    $inventory_query = mysqli_query($conn, "SELECT * FROM inventory ORDER BY created_at DESC");
-                    $no = 1;
-                    while ($item = mysqli_fetch_assoc($inventory_query)):
-                        $badge = $inventory->getKondisiBadge($item['kondisi']);
-                    ?>
-                    <tr>
-                        <td class="text-center"><?= $no++ ?></td>
-                        <td class="fw-semibold"><?= htmlspecialchars($item['nama_barang']) ?></td>
-                        <td><?= htmlspecialchars($item['kategori']) ?></td>
-                        <td class="text-center fw-bold"><?= $item['jumlah'] ?></td>
-                        <td><span class="badge-custom <?= $badge ?>"><?= $item['kondisi'] ?></span></td>
-                        <td><?= $inventory->formatDate($item['tanggal_pembelian'], 'd/m/Y') ?></td>
-                        <td class="text-end">
-                            <button class="action-btn history" onclick="openUsageModal(<?= $item['id'] ?>, '<?= addslashes($item['nama_barang']) ?>')" title="Catat Penggunaan">
-                                <i class="fas fa-history"></i>
-                            </button>
-                            <button class="action-btn edit" onclick="openEditModal(<?= $item['id'] ?>, '<?= addslashes($item['nama_barang']) ?>', '<?= $item['kategori'] ?>', <?= $item['jumlah'] ?>, '<?= $item['kondisi'] ?>', '<?= addslashes($item['keterangan']) ?>')" title="Edit">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <a href="?delete=<?= $item['id'] ?>" class="action-btn delete" onclick="return confirm('Yakin hapus?')" title="Hapus">
-                                <i class="fas fa-trash"></i>
-                            </a>
-                        </td>
-                    </tr>
-                    <?php endwhile; ?>
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
-
-
+            <!--  DAFTAR INVENTARIS  -->
+            <div class="card-custom mb-4">
+                <div class="card-header-custom d-flex justify-content-between align-items-center">
+                    <span>Daftar Inventaris</span>
+                    <span class="badge bg-secondary"><?= mysqli_num_rows(mysqli_query($conn, "SELECT * FROM inventory")) ?> Item</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-custom inventory-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 5%;" class="text-center">NO</th>
+                                    <th style="width: 25%;">NAMA BARANG</th>
+                                    <th style="width: 20%;">KATEGORI</th>
+                                    <th style="width: 10%;" class="text-center">JUMLAH</th>
+                                    <th style="width: 15%;">KONDISI</th>
+                                    <th style="width: 15%;">TANGGAL BELI</th>
+                                    <th style="width: 10%;" class="text-end">AKSI</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php
+                                $inventory_query = mysqli_query($conn, "SELECT * FROM inventory ORDER BY created_at DESC");
+                                $no = 1;
+                                while ($item = mysqli_fetch_assoc($inventory_query)):
+                                    $badge = $inventory->getKondisiBadge($item['kondisi']);
+                                ?>
+                                <tr>
+                                    <td class="text-center"><?= $no++ ?></td>
+                                    <td class="fw-semibold"><?= htmlspecialchars($item['nama_barang']) ?></td>
+                                    <td><?= htmlspecialchars($item['kategori']) ?></td>
+                                    <td class="text-center fw-bold"><?= $item['jumlah'] ?></td>
+                                    <td><span class="badge-custom <?= $badge ?>"><?= $item['kondisi'] ?></span></td>
+                                    <td><?= $inventory->formatDate($item['tanggal_pembelian'], 'd/m/Y') ?></td>
+                                    <td class="text-end">
+                                        <button class="action-btn history" onclick="openUsageModal(<?= $item['id'] ?>, '<?= addslashes($item['nama_barang']) ?>')" title="Catat Penggunaan">
+                                            <i class="fas fa-history"></i>
+                                        </button>
+                                        <button class="action-btn edit" onclick="openEditModal(<?= $item['id'] ?>, '<?= addslashes($item['nama_barang']) ?>', '<?= $item['kategori'] ?>', <?= $item['jumlah'] ?>, '<?= $item['kondisi'] ?>', '<?= addslashes($item['keterangan']) ?>')" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <a href="?delete=<?= $item['id'] ?>" class="action-btn delete" onclick="return confirm('Yakin hapus?')" title="Hapus">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                <?php endwhile; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
             <!-- Riwayat Penggunaan -->
             <div class="card-custom">
                 <div class="card-header-custom d-flex justify-content-between align-items-center flex-wrap gap-2">
