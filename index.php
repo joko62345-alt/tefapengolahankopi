@@ -168,7 +168,7 @@ function isCustomerLoggedIn() {
                 <div class="feature-item">
                     <div class="feature-icon"><i class="fas fa-seedling"></i></div>
                     <h4 class="feature-title">Biji Kopi Pilihan</h4>
-                    <p class="feature-desc">Robusta & Arabica terbaik dari petani lokal berkualitas tinggi</p>
+                    <p class="feature-desc">Biji Kopi terbaik dari petani lokal berkualitas tinggi</p>
                 </div>
             </div>
             <div class="col-md-6 col-lg-4">

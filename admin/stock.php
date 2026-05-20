@@ -136,7 +136,6 @@ class StockController {
     $this->success = "
         <div class='alert-content'>
             <div class='alert-title'>
-                <i class='fas fa-check-circle'></i>
                 Stok Berhasil Diupdate!
             </div>
             <div class='alert-message'>
@@ -180,7 +179,7 @@ class StockController {
     //Load semua data yang dibutuhkan view
      
     private function loadData(): void {
-        // 🔹 Load movements dengan filter
+        //  Load movements dengan filter
         $where = $this->buildMovementsWhereClause();
         $movements_query = mysqli_query($this->conn, "
             SELECT sm.*, cb.nama_biji_kopi
